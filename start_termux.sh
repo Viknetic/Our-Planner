@@ -1,50 +1,61 @@
 #!/bin/bash
 
-# Port number requested
+# Configuration
 PORT=49210
+SCRIPT_PATH=$(realpath "$0")
+DIR_PATH=$(dirname "$SCRIPT_PATH")
+DATA_DIR="$DIR_PATH/data"
 
-echo "🚀 Our Planner Premium: Termux Manager"
+echo "🚀 Our Planner Premium: System Manager"
 
 # 1. Dependency Check
 if ! command -v node &> /dev/null; then
-    echo "📦 Installing Node.js..."
+    echo "📦 Initializing dependencies..."
     pkg install openssh nodejs screen termux-services -y
 fi
 
-if [ ! -f "package.json" ]; then
+if [ ! -f "$DIR_PATH/package.json" ]; then
+    cd "$DIR_PATH"
     npm init -y
     npm install express
 fi
 
 # 2. Command: autostart
 if [ "$1" == "autostart" ]; then
-    echo "⚙️ Setting up autostart in .bashrc..."
-    BASHRC="$HOME/.bashrc"
+    echo "⚙️ Setting up robust autostart..."
     
-    # Check if already in bashrc
-    if grep -q "screen -ls | grep -q planner" "$BASHRC"; then
-        echo "✅ Autostart is already configured!"
-    else
-        cat <<EOF >> "$BASHRC"
+    AUTORUN_CMD="if ! screen -ls | grep -q \"planner\"; then cd \"$DIR_PATH\" && screen -dmS planner ./start_termux.sh; fi"
+    
+    # Setup for both Bash and Zsh
+    for SHELL_CONFIG in "$HOME/.bashrc" "$HOME/.zshrc"; do
+        if [ -f "$SHELL_CONFIG" ] || [ "$SHELL_CONFIG" == "$HOME/.bashrc" ]; then
+            # Remove old autostart if exists to prevent duplicates
+            sed -i '/Our Planner Autostart/,/End Our Planner/d' "$SHELL_CONFIG"
+            
+            # Append new block
+            cat <<EOF >> "$SHELL_CONFIG"
 
 # --- Our Planner Autostart ---
-if ! screen -ls | grep -q "planner"; then
-    echo "🚀 Starting Our Planner in background (screen)..."
-    cd "$PWD"
-    screen -dmS planner ./start_termux.sh
-fi
-# -----------------------------
+$AUTORUN_CMD
+# --- End Our Planner ---
 EOF
-        echo "✅ Autostart added to .bashrc!"
-        echo "💡 Next time you open Termux, the planner will start automatically."
-    fi
+            echo "✅ Configured $SHELL_CONFIG"
+        fi
+    done
+    
+    echo "✨ Autostart is now locked in! Restart Termux to test."
     exit 0
 fi
 
-# 3. Standard Startup via Screen
+# 3. Server Startup
+cd "$DIR_PATH" # Ensure we are in the right folder
+
+# Ensure data directory exists
+mkdir -p "$DATA_DIR"
+
 echo "✨ Starting Our Planner..."
-echo "🌐 Access at: http://$(tailscale ip -4):$PORT"
-echo "💡 To run in background, use: screen -dmS planner ./start_termux.sh"
-echo "💡 To enable auto-start on boot, run: ./start_termux.sh autostart"
+echo "🌐 Network: http://$(tailscale ip -4):$PORT"
+echo "🖥️ Local:   http://localhost:$PORT"
+echo "💡 To manually run in background: screen -dmS planner ./start_termux.sh"
 
 node server.js
