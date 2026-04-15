@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Our Planner | Premium Edition</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a0a0f">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-deep: #050508;
+            --bg-main: #0a0a0f;
+            --card-glass: rgba(255, 255, 255, 0.03);
+            --card-glass-hover: rgba(255, 255, 255, 0.06);
+            --accent-primary: #8b5cf6;
+            --accent-secondary: #ec4899;
+            --accent-glow: rgba(139, 92, 246, 0.3);
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --border-glass: rgba(255, 255, 255, 0.08);
+            --success: #10b981;
+            --danger: #ef4444;
+            --font-main: 'Outfit', sans-serif;
+            --ease: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.light-mode {
+            --bg-deep: #f8fafc;
+            --bg-main: #ffffff;
+            --card-glass: rgba(0, 0, 0, 0.02);
+            --card-glass-hover: rgba(0, 0, 0, 0.04);
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --border-glass: rgba(0, 0, 0, 0.06);
+            --accent-glow: rgba(139, 92, 246, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-deep);
+            color: var(--text-primary);
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            transition: background-color 0.5s var(--ease);
+        }
+
+        .bg-glow { position: fixed; width: 300px; height: 300px; background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%); z-index: -1; filter: blur(60px); pointer-events: none; }
+        .glow-1 { top: -100px; right: -100px; }
+        .glow-2 { bottom: -100px; left: -100px; }
+
+        header {
+            padding: 1.25rem 1.5rem;
+            background: rgba(10, 10, 15, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-glass);
+        }
+
+        .header-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-actions { display: flex; align-items: center; gap: 0.75rem; }
+
+        .icon-btn {
+            width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--border-glass);
+            background: var(--card-glass); color: var(--text-primary); display: grid; place-items: center;
+            cursor: pointer; transition: all 0.3s var(--ease);
+        }
+        .icon-btn:active { transform: scale(0.9); background: var(--card-glass-hover); }
+
+        .user-select-wrapper { position: relative; }
+        select {
+            padding: 0.5rem 1rem; border-radius: 12px; background: var(--card-glass); color: var(--text-primary);
+            border: 1px solid var(--border-glass); font-family: inherit; font-weight: 500; outline: none;
+            appearance: none; cursor: pointer; padding-right: 2.5rem;
+        }
+        .select-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; opacity: 0.5; }
+
+        main { flex: 1; padding: 1.5rem; max-width: 600px; margin: 0 auto; width: 100%; padding-bottom: 110px; }
+
+        .search-container { position: relative; margin-bottom: 2rem; }
+        .search-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary); pointer-events: none; }
+        .search-bar {
+            background: var(--card-glass); border: 1px solid var(--border-glass); border-radius: 16px;
+            padding: 1rem 1rem 1rem 3rem; width: 100%; color: var(--text-primary); font-family: inherit;
+            font-size: 1rem; transition: all 0.3s var(--ease);
+        }
+        .search-bar:focus { outline: none; border-color: var(--accent-primary); background: var(--card-glass-hover); box-shadow: 0 0 20px var(--accent-glow); }
+
+        .card { background: var(--card-glass); border: 1px solid var(--border-glass); border-radius: 24px; padding: 1.5rem; margin-bottom: 2rem; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .calendar-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; text-align: center; margin-bottom: 0.75rem; }
+        .day-name { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+        .day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 16px; font-size: 0.95rem; font-weight: 500; cursor: pointer; position: relative; transition: all 0.3s var(--ease); border: 1px solid transparent; }
+        .day:hover { background: var(--card-glass-hover); border-color: var(--border-glass); }
+        .day.today { background: var(--accent-primary); color: white; box-shadow: 0 8px 16px var(--accent-glow); }
+        .day.selected { border: 2px solid var(--accent-secondary); background: rgba(236, 72, 153, 0.1); }
+        .day.has-task::after { content: ''; position: absolute; bottom: 6px; width: 4px; height: 4px; background: var(--accent-secondary); border-radius: 50%; box-shadow: 0 0 10px var(--accent-secondary); }
+        .day.other-month { opacity: 0.2; }
+
+        .section-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.5rem; }
+        .task-list { list-style: none; display: flex; flex-direction: column; gap: 0.75rem; }
+        .task-item {
+            background: var(--card-glass); border: 1px solid var(--border-glass); border-radius: 20px;
+            padding: 1.25rem; display: flex; align-items: center; gap: 1.25rem; cursor: pointer;
+            transition: all 0.3s var(--ease); animation: fadeIn 0.4s var(--ease) forwards;
+        }
+        .task-item:hover { background: var(--card-glass-hover); transform: translateX(5px); border-color: var(--accent-primary); }
+        .task-checkbox-wrapper { position: relative; width: 28px; height: 28px; }
+        .task-checkbox {
+            width: 100%; height: 100%; border-radius: 8px; border: 2px solid var(--accent-primary);
+            cursor: pointer; appearance: none; display: grid; place-content: center; transition: all 0.3s var(--ease);
+        }
+        .task-checkbox:checked { background: var(--accent-primary); }
+        .task-checkbox:checked::before { content: ''; width: 10px; height: 6px; border-left: 2px solid white; border-bottom: 2px solid white; transform: rotate(-45deg) translate(2px, -2px); }
+        .task-info { flex: 1; }
+        .task-title { font-size: 1.05rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .task-meta { display: flex; align-items: center; gap: 0.5rem; }
+        .tag-badge { font-size: 0.65rem; padding: 2px 10px; border-radius: 12px; font-weight: 700; color: white; text-transform: uppercase; }
+
+        .fab {
+            position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); height: 64px;
+            padding: 0 2rem; border-radius: 32px; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white; border: none; font-family: inherit; font-weight: 700; font-size: 1rem;
+            display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 15px 35px rgba(139, 92, 246, 0.4);
+            cursor: pointer; z-index: 100; transition: all 0.3s var(--ease);
+        }
+        .fab:hover { transform: translateX(-50%) translateY(-5px) scale(1.05); }
+
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 5, 8, 0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            z-index: 1000; align-items: flex-end; justify-content: center;
+        }
+        @media (min-width: 600px) { .modal { align-items: center; padding: 1rem; } }
+        .modal-content {
+            background: var(--bg-main); width: 100%; max-width: 500px; border-radius: 32px 32px 0 0;
+            padding: 2rem; border: 1px solid var(--border-glass); animation: slideUp 0.4s var(--ease) forwards;
+        }
+        @media (min-width: 600px) { .modal-content { border-radius: 32px; animation: scaleIn 0.3s var(--ease) forwards; } }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+
+        .form-group { margin-bottom: 1.5rem; }
+        label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 1px; }
+        input, select {
+            width: 100%; padding: 1rem; border-radius: 16px; background: var(--card-glass);
+            border: 1px solid var(--border-glass); color: var(--text-primary); font-family: inherit; font-size: 1rem;
+        }
+
+        .btn-group { display: flex; gap: 1rem; margin-top: 2rem; }
+        .btn {
+            flex: 1; padding: 1.25rem; border-radius: 16px; border: none; font-weight: 700;
+            font-size: 1rem; cursor: pointer; transition: all 0.3s var(--ease); display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+        }
+        .btn-primary { background: var(--accent-primary); color: white; }
+        .btn-secondary { background: var(--card-glass); color: var(--text-primary); border: 1px solid var(--border-glass); }
+        .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); }
+
+        .category-item {
+            display: flex; align-items: center; gap: 1rem; background: var(--card-glass);
+            padding: 0.75rem; border-radius: 12px; margin-bottom: 0.5rem; border: 1px solid var(--border-glass);
+        }
+        .color-preview { width: 24px; height: 24px; border-radius: 6px; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <div class="bg-glow glow-1"></div>
+    <div class="bg-glow glow-2"></div>
+
+    <header>
+        <div class="header-title">Our Planner</div>
+        <div class="header-actions">
+            <button class="icon-btn" onclick="toggleDarkMode()">
+                <i data-lucide="moon" id="themeIcon"></i>
+            </button>
+            <div class="user-select-wrapper">
+                <select id="currentUser" onchange="switchUser()">
+                    <option value="Viki">Viki</option>
+                    <option value="Manja">Manja</option>
+                    <option value="Admin">Admin</option>
+                </select>
+                <i data-lucide="chevron-down" class="select-icon" size="16"></i>
+            </div>
+            <button class="icon-btn" onclick="openCategoryModal()" title="Manage Categories">
+                <i data-lucide="settings"></i>
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <div class="search-container">
+            <i data-lucide="search" class="search-icon" size="20"></i>
+            <input type="text" id="searchInput" class="search-bar" placeholder="Search schedule..." oninput="renderTasks()">
+        </div>
+
+        <div class="card">
+            <div class="calendar-header">
+                <button class="icon-btn" onclick="prevMonth()"><i data-lucide="chevron-left"></i></button>
+                <h3 id="monthDisplay">Month Year</h3>
+                <button class="icon-btn" onclick="nextMonth()"><i data-lucide="chevron-right"></i></button>
+            </div>
+            <div class="calendar-days">
+                <div class="day-name">Sun</div><div class="day-name">Mon</div><div class="day-name">Tue</div>
+                <div class="day-name">Wed</div><div class="day-name">Thu</div><div class="day-name">Fri</div>
+                <div class="day-name">Sat</div>
+            </div>
+            <div id="calendarGrid" class="calendar-grid"></div>
+        </div>
+
+        <div class="tasks-container">
+            <div class="section-header">
+                <div class="header-info">
+                    <h3 id="selectedDateDisplay">Today</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem;" id="taskCount">0 tasks</p>
+                </div>
+                <div class="category-filter" style="position: relative;">
+                    <select id="filterCategory" onchange="renderTasks()" style="font-size: 0.8rem; padding: 0.4rem 2rem 0.4rem 1rem; border-radius: 20px;">
+                        <option value="all">All Tags</option>
+                    </select>
+                </div>
+            </div>
+            <ul id="taskList" class="task-list"></ul>
+        </div>
+    </main>
+
+    <button class="fab" onclick="openTaskModal()">
+        <i data-lucide="plus"></i>
+        <span>New Task</span>
+    </button>
+
+    <!-- Task Modal -->
+    <div id="taskModal" class="modal" onclick="if(event.target === this) closeModal()">
+        <div class="modal-content">
+            <div class="modal-header" style="margin-bottom: 2rem; display: flex; justify-content: space-between;">
+                <h3 id="modalTitle">New Task</h3>
+                <button class="icon-btn" onclick="closeModal()" style="border:none; background:transparent;"><i data-lucide="x"></i></button>
+            </div>
+            <input type="hidden" id="editTaskId">
+            <div class="form-group"><label>Task Name</label><input type="text" id="taskTitleInput" placeholder="What to do?"></div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group"><label>Date</label><input type="date" id="taskDateInput"></div>
+                <div class="form-group"><label>Reminder (Days)</label><input type="number" id="remindDaysInput" value="2"></div>
+            </div>
+            <div class="form-group">
+                <label>Category</label>
+                <select id="taskCategorySelect"></select>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-danger" id="deleteBtn" style="display:none;" onclick="deleteTask()">Delete</button>
+                <button class="btn btn-primary" onclick="saveTask()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Modal -->
+    <div id="categoryModal" class="modal" onclick="if(event.target === this) closeCategoryModal()">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 1.5rem;">Manage categories</h3>
+            <div id="categoryList" style="max-height: 200px; overflow-y: auto; margin-bottom: 1.5rem;"></div>
+            <div style="padding: 1rem; background: var(--card-glass); border-radius: 16px; border: 1px solid var(--border-glass);">
+                <h4 style="font-size: 0.8rem; margin-bottom: 1rem; opacity: 0.7;">ADD NEW CATEGORY</h4>
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <input type="text" id="newCatName" placeholder="Name" style="flex: 1;">
+                    <input type="color" id="newCatColor" style="width: 50px; padding: 0; border: none; height: 48px; cursor: pointer;">
+                </div>
+                <button class="btn btn-primary" onclick="addCategory()" style="padding: 0.75rem; width: 100%;">Add Category</button>
+            </div>
+            <div class="btn-group"><button class="btn btn-secondary" onclick="closeCategoryModal()">Done</button></div>
+        </div>
+    </div>
+
+    <script>
+        let tasks = [];
+        let categories = [];
+        let currentViewDate = new Date();
+        let selectedDate = new Date();
+        let currentUser = document.getElementById('currentUser').value;
+
+        async function loadData() {
+            try {
+                const res = await fetch('/api/data');
+                const data = await res.json();
+                tasks = data.tasks;
+                categories = data.categories;
+                updateCategoryUI();
+                renderCalendar();
+                renderTasks();
+            } catch (e) { console.error('Load failed:', e); }
+        }
+
+        async function saveData() {
+            try {
+                await fetch('/api/data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tasks, categories })
+                });
+            } catch (e) { console.error('Save failed:', e); }
+        }
+
+        function refreshIcons() { lucide.createIcons(); }
+
+        function init() {
+            loadData();
+            document.getElementById('taskDateInput').valueAsDate = new Date();
+            refreshIcons();
+        }
+
+        function switchUser() { currentUser = document.getElementById('currentUser').value; renderTasks(); renderCalendar(); }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('light-mode');
+            const icon = document.getElementById('themeIcon');
+            const isLight = document.body.classList.contains('light-mode');
+            icon.setAttribute('data-lucide', isLight ? 'sun' : 'moon');
+            refreshIcons();
+            document.querySelector('meta[name="theme-color"]').setAttribute('content', isLight ? '#ffffff' : '#0a0a0f');
+        }
+
+        // Categories Management
+        function openCategoryModal() { document.getElementById('categoryModal').style.display = 'flex'; renderCategoryList(); }
+        function closeCategoryModal() { document.getElementById('categoryModal').style.display = 'none'; updateCategoryUI(); }
+
+        function renderCategoryList() {
+            const list = document.getElementById('categoryList');
+            list.innerHTML = categories.map((cat, idx) => `
+                <div class="category-item">
+                    <div class="color-preview" style="background: ${cat.color}"></div>
+                    <span style="flex: 1;">${cat.name}</span>
+                    <button class="icon-btn" onclick="removeCategory(${idx})" style="border:none; width: 30px; height: 30px;"><i data-lucide="trash-2" size="14"></i></button>
+                </div>
+            `).join('');
+            refreshIcons();
+        }
+
+        function addCategory() {
+            const name = document.getElementById('newCatName').value.trim();
+            const color = document.getElementById('newCatColor').value;
+            if (name) {
+                categories.push({ name, color });
+                document.getElementById('newCatName').value = '';
+                saveData();
+                renderCategoryList();
+                updateCategoryUI();
+            }
+        }
+
+        function removeCategory(idx) {
+            categories.splice(idx, 1);
+            saveData();
+            renderCategoryList();
+            updateCategoryUI();
+        }
+
+        function updateCategoryUI() {
+            const filterSelect = document.getElementById('filterCategory');
+            const taskSelect = document.getElementById('taskCategorySelect');
+            const savedFilter = filterSelect.value;
+            
+            filterSelect.innerHTML = '<option value="all">All Tags</option>' + 
+                categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+            taskSelect.innerHTML = categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+            
+            filterSelect.value = savedFilter || 'all';
+        }
+
+        // Calendar Logic
+        function renderCalendar() {
+            const grid = document.getElementById('calendarGrid');
+            const monthDisplay = document.getElementById('monthDisplay');
+            grid.innerHTML = '';
+            const year = currentViewDate.getFullYear();
+            const month = currentViewDate.getMonth();
+            monthDisplay.innerText = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(currentViewDate);
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const prevMonthDays = new Date(year, month, 0).getDate();
+
+            for (let i = firstDay - 1; i >= 0; i--) createDayElement(prevMonthDays - i, true);
+            for (let i = 1; i <= daysInMonth; i++) createDayElement(i, false);
+            const remain = 42 - grid.children.length;
+            for (let i = 1; i <= remain; i++) createDayElement(i, true);
+        }
+
+        function createDayElement(dayNum, isOtherMonth) {
+            const grid = document.getElementById('calendarGrid');
+            const div = document.createElement('div');
+            div.className = 'day';
+            if (isOtherMonth) div.classList.add('other-month');
+            const checksDate = new Date(currentViewDate.getFullYear(), currentViewDate.getMonth(), dayNum);
+            const dateStr = formatLocalDate(checksDate);
+            if (tasks.some(t => t.date === dateStr && t.user === currentUser)) div.classList.add('has-task');
+            if (!isOtherMonth && dayNum === new Date().getDate() && currentViewDate.getMonth() === new Date().getMonth() && currentViewDate.getFullYear() === new Date().getFullYear()) div.classList.add('today');
+            if (!isOtherMonth && dayNum === selectedDate.getDate() && currentViewDate.getMonth() === selectedDate.getMonth() && currentViewDate.getFullYear() === selectedDate.getFullYear()) div.classList.add('selected');
+            div.innerText = dayNum;
+            div.onclick = () => {
+                if (!isOtherMonth) {
+                    selectedDate = new Date(currentViewDate.getFullYear(), currentViewDate.getMonth(), dayNum);
+                    document.getElementById('selectedDateDisplay').innerText = formatFriendlyDate(selectedDate);
+                    renderCalendar();
+                    renderTasks();
+                }
+            };
+            grid.appendChild(div);
+        }
+
+        function prevMonth() { currentViewDate.setMonth(currentViewDate.getMonth() - 1); renderCalendar(); }
+        function nextMonth() { currentViewDate.setMonth(currentViewDate.getMonth() + 1); renderCalendar(); }
+
+        function formatLocalDate(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        function formatFriendlyDate(date) {
+            const todayStr = formatLocalDate(new Date());
+            const targetStr = formatLocalDate(date);
+            if (todayStr === targetStr) return 'Today';
+            return date.toLocaleDateString('en-US', { day: 'numeric', month: 'long' });
+        }
+
+        function renderTasks() {
+            const list = document.getElementById('taskList');
+            list.innerHTML = '';
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const filterTag = document.getElementById('filterCategory').value;
+            const dateStr = formatLocalDate(selectedDate);
+
+            const filteredTasks = tasks.filter(t => {
+                return t.user === currentUser && t.date === dateStr && 
+                       t.title.toLowerCase().includes(search) &&
+                       (filterTag === 'all' || t.category === filterTag);
+            });
+
+            document.getElementById('taskCount').innerText = `${filteredTasks.length} tasks scheduled`;
+
+            if (filteredTasks.length === 0) {
+                list.innerHTML = `<div style="text-align:center; padding: 2rem; opacity: 0.5;"><i data-lucide="calendar-check" size="40"></i><p>Free day!</p></div>`;
+                refreshIcons(); return;
+            }
+
+            filteredTasks.forEach(task => {
+                const cat = categories.find(c => c.name === task.category) || { color: '#888', name: 'None' };
+                const li = document.createElement('li');
+                li.className = `task-item ${task.completed ? 'completed' : ''}`;
+                li.style.borderLeft = `4px solid ${cat.color}`;
+                li.innerHTML = `
+                    <div class="task-checkbox-wrapper"><input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} onclick="event.stopPropagation(); completeTask('${task.id}', event)"></div>
+                    <div class="task-info" onclick="openTaskModal('${task.id}')">
+                        <div class="task-title" style="${task.completed ? 'text-decoration: line-through; opacity: 0.5;' : ''}">${task.title}</div>
+                        <div class="task-meta">
+                            <span class="tag-badge" style="background: ${cat.color}">${cat.name}</span>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(li);
+            });
+            refreshIcons();
+        }
+
+        function openTaskModal(taskId = null) {
+            const modal = document.getElementById('taskModal');
+            document.getElementById('deleteBtn').style.display = taskId ? 'flex' : 'none';
+            document.getElementById('modalTitle').innerText = taskId ? 'Edit Task' : 'New Task';
+            
+            if (taskId) {
+                const task = tasks.find(t => t.id === taskId);
+                document.getElementById('taskTitleInput').value = task.title;
+                document.getElementById('taskDateInput').value = task.date;
+                document.getElementById('remindDaysInput').value = task.remindDays;
+                document.getElementById('taskCategorySelect').value = task.category;
+                document.getElementById('editTaskId').value = taskId;
+            } else {
+                document.getElementById('taskTitleInput').value = '';
+                document.getElementById('taskDateInput').value = formatLocalDate(selectedDate);
+                document.getElementById('remindDaysInput').value = 2;
+                document.getElementById('editTaskId').value = '';
+            }
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() { document.getElementById('taskModal').style.display = 'none'; }
+
+        function saveTask() {
+            const title = document.getElementById('taskTitleInput').value.trim();
+            const date = document.getElementById('taskDateInput').value;
+            const remindDays = document.getElementById('remindDaysInput').value;
+            const category = document.getElementById('taskCategorySelect').value;
+            const editId = document.getElementById('editTaskId').value;
+
+            if (!title) return;
+
+            if (editId) {
+                const idx = tasks.findIndex(t => t.id === editId);
+                tasks[idx] = { ...tasks[idx], title, date, remindDays, category };
+            } else {
+                tasks.push({ id: Date.now().toString(), user: currentUser, title, date, remindDays, category, completed: false });
+            }
+            saveData().then(() => { renderTasks(); renderCalendar(); closeModal(); });
+        }
+
+        function deleteTask() {
+            const id = document.getElementById('editTaskId').value;
+            tasks = tasks.filter(t => t.id !== id);
+            saveData().then(() => { renderTasks(); renderCalendar(); closeModal(); });
+        }
+
+        function completeTask(id, event) {
+            const task = tasks.find(t => t.id === id);
+            task.completed = event.target.checked;
+            saveData().then(() => renderTasks());
+        }
+
+        init();
+    </script>
+</body>
+</html>
