@@ -1,6 +1,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const app = express();
 const PORT = 49210;
 
@@ -38,7 +39,30 @@ app.post('/api/data', (req, res) => {
     }
 });
 
+// System Stats Endpoint
+app.get('/api/stats', (req, res) => {
+    const totalMem = os.totalmem();
+    const freeMem = os.freemem();
+    const usedMem = totalMem - freeMem;
+    
+    // CPU usage is complex for a one-shot, but we can give load average as a proxy
+    const loadAvg = os.loadavg(); 
+    
+    res.json({
+        ram: {
+            total: (totalMem / 1024 / 1024 / 1024).toFixed(2) + ' GB',
+            used: (usedMem / 1024 / 1024 / 1024).toFixed(2) + ' GB',
+            percent: ((usedMem / totalMem) * 100).toFixed(0) + '%'
+        },
+        cpu: {
+            load: loadAvg[0].toFixed(2), // 1 minute load average
+            model: os.cpus()[0].model,
+            cores: os.cpus().length
+        },
+        uptime: (os.uptime() / 3600).toFixed(1) + ' hours'
+    });
+});
+
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Our Planner Server running on port ${PORT}`);
-    console.log(`🔗 Local: http://localhost:${PORT}`);
 });

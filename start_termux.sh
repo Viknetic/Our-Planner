@@ -2,14 +2,13 @@
 
 # Port number requested
 PORT=49210
-SERVICE_DIR="$HOME/.termux/services/our-planner"
 
 echo "🚀 Our Planner Premium: Termux Manager"
 
 # 1. Dependency Check
 if ! command -v node &> /dev/null; then
     echo "📦 Installing Node.js..."
-    pkg install openssh nodejs termux-services -y
+    pkg install openssh nodejs screen termux-services -y
 fi
 
 if [ ! -f "package.json" ]; then
@@ -17,42 +16,35 @@ if [ ! -f "package.json" ]; then
     npm install express
 fi
 
-# 2. Service Management
-if [ "$1" == "service" ]; then
-    echo "⚙️ Registering Our Planner as a system service..."
+# 2. Command: autostart
+if [ "$1" == "autostart" ]; then
+    echo "⚙️ Setting up autostart in .bashrc..."
+    BASHRC="$HOME/.bashrc"
     
-    mkdir -p "$SERVICE_DIR"
-    
-    # Create the run script for the service
-    cat <<EOF > "$SERVICE_DIR/run"
-#!/bin/bash
-exec 2>&1
-cd "$PWD"
-exec node server.js
+    # Check if already in bashrc
+    if grep -q "screen -ls | grep -q planner" "$BASHRC"; then
+        echo "✅ Autostart is already configured!"
+    else
+        cat <<EOF >> "$BASHRC"
+
+# --- Our Planner Autostart ---
+if ! screen -ls | grep -q "planner"; then
+    echo "🚀 Starting Our Planner in background (screen)..."
+    cd "$PWD"
+    screen -dmS planner ./start_termux.sh
+fi
+# -----------------------------
 EOF
-    
-    chmod +x "$SERVICE_DIR/run"
-    
-    echo "✅ Service registered!"
-    echo "🚀 Starting service now..."
-    sv up our-planner
-    echo "📱 Use 'sv status our-planner' to check status."
+        echo "✅ Autostart added to .bashrc!"
+        echo "💡 Next time you open Termux, the planner will start automatically."
+    fi
     exit 0
 fi
 
-if [ "$1" == "status" ]; then
-    sv status our-planner
-    exit 0
-fi
-
-if [ "$1" == "stop" ]; then
-    echo "🛑 Stopping the service..."
-    sv down our-planner
-    exit 0
-fi
-
-# 3. Foreground Mode (Standard)
-echo "✨ Starting in foreground mode..."
+# 3. Standard Startup via Screen
+echo "✨ Starting Our Planner..."
 echo "🌐 Access at: http://$(tailscale ip -4):$PORT"
-echo "💡 Tip: Run './start_termux.sh service' to make it a permanent background service!"
+echo "💡 To run in background, use: screen -dmS planner ./start_termux.sh"
+echo "💡 To enable auto-start on boot, run: ./start_termux.sh autostart"
+
 node server.js
