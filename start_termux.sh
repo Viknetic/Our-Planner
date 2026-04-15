@@ -6,56 +6,65 @@ SCRIPT_PATH=$(realpath "$0")
 DIR_PATH=$(dirname "$SCRIPT_PATH")
 DATA_DIR="$DIR_PATH/data"
 
-echo "🚀 Our Planner Premium: System Manager"
+# Ensure we are in the right folder
+cd "$DIR_PATH"
 
 # 1. Dependency Check
 if ! command -v node &> /dev/null; then
     echo "📦 Initializing dependencies..."
     pkg install openssh nodejs screen termux-services -y
+    [ ! -f "package.json" ] && npm init -y && npm install express
 fi
 
-if [ ! -f "$DIR_PATH/package.json" ]; then
-    cd "$DIR_PATH"
-    npm init -y
-    npm install express
-fi
-
-# 2. Command: autostart
-if [ "$1" == "autostart" ]; then
-    echo "⚙️ Setting up robust autostart..."
-    
-    AUTORUN_CMD="if ! screen -ls | grep -q \"planner\"; then cd \"$DIR_PATH\" && screen -dmS planner ./start_termux.sh; fi"
-    
-    # Setup for both Bash and Zsh
-    for SHELL_CONFIG in "$HOME/.bashrc" "$HOME/.zshrc"; do
-        if [ -f "$SHELL_CONFIG" ] || [ "$SHELL_CONFIG" == "$HOME/.bashrc" ]; then
-            # Remove old autostart if exists to prevent duplicates
-            sed -i '/Our Planner Autostart/,/End Our Planner/d' "$SHELL_CONFIG"
-            
-            # Append new block
-            cat <<EOF >> "$SHELL_CONFIG"
-
-# --- Our Planner Autostart ---
-$AUTORUN_CMD
-# --- End Our Planner ---
-EOF
-            echo "✅ Configured $SHELL_CONFIG"
+# 2. Commands
+case "$1" in
+    "start")
+        if screen -ls | grep -q "planner"; then
+            echo "✅ Server is already running in the background."
+        else
+            echo "🌙 Starting Our Planner in BACKGROUND mode..."
+            screen -dmS planner ./start_termux.sh run
+            echo "✅ Done! You can now safely close your SSH session."
         fi
-    done
-    
-    echo "✨ Autostart is now locked in! Restart Termux to test."
-    exit 0
-fi
+        exit 0
+        ;;
+    "stop")
+        if screen -ls | grep -q "planner"; then
+            echo "🛑 Stopping the background server..."
+            screen -X -S planner quit
+            echo "✅ Stopped."
+        else
+            echo "ℹ️ No background server found."
+        fi
+        exit 0
+        ;;
+    "logs")
+        echo "📜 Opening logs (Press Ctrl+A then D to exit logs without stopping server)..."
+        screen -r planner
+        exit 0
+        ;;
+    "autostart")
+        echo "⚙️ Setting up robust autostart..."
+        # Simplified autostart command
+        CMD="if ! screen -ls | grep -q \"planner\"; then cd \"$DIR_PATH\" && ./start_termux.sh start > /dev/null 2>&1; fi"
+        for CFG in "$HOME/.bashrc" "$HOME/.zshrc"; do
+            [ -f "$CFG" ] || [ "$CFG" == "$HOME/.bashrc" ] && {
+                sed -i '/Our Planner Autostart/,/End Our Planner/d' "$CFG"
+                echo -e "\n# --- Our Planner Autostart ---\n$CMD\n# --- End Our Planner ---" >> "$CFG"
+                echo "✅ Configured $CFG"
+            }
+        done
+        exit 0
+        ;;
+    "run")
+        # Internal command used by screen
+        node server.js
+        exit 0
+        ;;
+esac
 
-# 3. Server Startup
-cd "$DIR_PATH" # Ensure we are in the right folder
-
-# Ensure data directory exists
-mkdir -p "$DATA_DIR"
-
-echo "✨ Starting Our Planner..."
+# 3. Default (Foreground)
+echo "✨ Our Planner: Foreground Mode"
 echo "🌐 Network: http://$(tailscale ip -4):$PORT"
-echo "🖥️ Local:   http://localhost:$PORT"
-echo "💡 To manually run in background: screen -dmS planner ./start_termux.sh"
-
+echo "💡 To run in background: ./start_termux.sh start"
 node server.js
