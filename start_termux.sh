@@ -3,31 +3,54 @@
 # Port number requested
 PORT=49210
 
-echo "🚀 Starting Our Planner Premium Server on port $PORT..."
+echo "🚀 Our Planner Premium: Termux Startup"
 
-# Check if node is installed
-if ! command -v node &> /dev/null
-then
-    echo "📦 Node.js not found. Installing..."
+# 1. Dependency Check
+if ! command -v node &> /dev/null; then
+    echo "📦 Installing Node.js..."
     pkg install nodejs -y
 fi
 
-# Initialize npm if package.json doesn't exist
 if [ ! -f "package.json" ]; then
-    echo "📦 Initializing Node project..."
     npm init -y
     npm install express
 fi
 
-# Ensure express is installed
 if [ ! -d "node_modules/express" ]; then
-    echo "📦 Installing express..."
     npm install express
 fi
 
-echo "✨ Server is starting!"
-echo "📱 Access it at: http://localhost:$PORT"
-echo "🌐 Or via Tailscale IP at: http://$(tailscale ip -4):$PORT"
+# 2. PM2 (Background Manager) Setup
+if ! command -v pm2 &> /dev/null; then
+    echo "📦 Installing PM2 for background support..."
+    npm install -g pm2
+fi
 
-# Run the server
+# 3. Handle Command Arguments
+if [ "$1" == "stop" ]; then
+    echo "🛑 Stopping the background server..."
+    pm2 stop our-planner
+    exit 0
+fi
+
+if [ "$1" == "logs" ]; then
+    pm2 logs our-planner
+    exit 0
+fi
+
+if [ "$1" == "bg" ]; then
+    echo "🌙 Starting in BACKGROUND mode..."
+    pm2 start server.js --name our-planner
+    echo "✅ Server is running in the background!"
+    echo "📱 Access it at: http://$(tailscale ip -4):$PORT"
+    echo "💡 Run './start_termux.sh logs' to see what's happening."
+    echo "💡 Run './start_termux.sh stop' to kill it."
+    termux-wake-lock
+    exit 0
+fi
+
+# 4. Standard Foreground Mode
+echo "✨ Starting in foreground mode (Ctrl+C to stop)..."
+echo "🌐 Access at: http://$(tailscale ip -4):$PORT"
+echo "💡 Tip: Run './start_termux.sh bg' to run it in the background instead!"
 node server.js
