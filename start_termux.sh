@@ -2,13 +2,14 @@
 
 # Port number requested
 PORT=49210
+SERVICE_DIR="$HOME/.termux/services/our-planner"
 
-echo "🚀 Our Planner Premium: Termux Startup"
+echo "🚀 Our Planner Premium: Termux Manager"
 
 # 1. Dependency Check
 if ! command -v node &> /dev/null; then
     echo "📦 Installing Node.js..."
-    pkg install nodejs -y
+    pkg install openssh nodejs termux-services -y
 fi
 
 if [ ! -f "package.json" ]; then
@@ -16,41 +17,42 @@ if [ ! -f "package.json" ]; then
     npm install express
 fi
 
-if [ ! -d "node_modules/express" ]; then
-    npm install express
+# 2. Service Management
+if [ "$1" == "service" ]; then
+    echo "⚙️ Registering Our Planner as a system service..."
+    
+    mkdir -p "$SERVICE_DIR"
+    
+    # Create the run script for the service
+    cat <<EOF > "$SERVICE_DIR/run"
+#!/bin/bash
+exec 2>&1
+cd "$PWD"
+exec node server.js
+EOF
+    
+    chmod +x "$SERVICE_DIR/run"
+    
+    echo "✅ Service registered!"
+    echo "🚀 Starting service now..."
+    sv up our-planner
+    echo "📱 Use 'sv status our-planner' to check status."
+    exit 0
 fi
 
-# 2. PM2 (Background Manager) Setup
-if ! command -v pm2 &> /dev/null; then
-    echo "📦 Installing PM2 for background support..."
-    npm install -g pm2
+if [ "$1" == "status" ]; then
+    sv status our-planner
+    exit 0
 fi
 
-# 3. Handle Command Arguments
 if [ "$1" == "stop" ]; then
-    echo "🛑 Stopping the background server..."
-    pm2 stop our-planner
+    echo "🛑 Stopping the service..."
+    sv down our-planner
     exit 0
 fi
 
-if [ "$1" == "logs" ]; then
-    pm2 logs our-planner
-    exit 0
-fi
-
-if [ "$1" == "bg" ]; then
-    echo "🌙 Starting in BACKGROUND mode..."
-    pm2 start server.js --name our-planner
-    echo "✅ Server is running in the background!"
-    echo "📱 Access it at: http://$(tailscale ip -4):$PORT"
-    echo "💡 Run './start_termux.sh logs' to see what's happening."
-    echo "💡 Run './start_termux.sh stop' to kill it."
-    termux-wake-lock
-    exit 0
-fi
-
-# 4. Standard Foreground Mode
-echo "✨ Starting in foreground mode (Ctrl+C to stop)..."
+# 3. Foreground Mode (Standard)
+echo "✨ Starting in foreground mode..."
 echo "🌐 Access at: http://$(tailscale ip -4):$PORT"
-echo "💡 Tip: Run './start_termux.sh bg' to run it in the background instead!"
+echo "💡 Tip: Run './start_termux.sh service' to make it a permanent background service!"
 node server.js
