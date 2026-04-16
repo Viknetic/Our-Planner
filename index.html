@@ -872,6 +872,7 @@
     // ===== STATE =====
     let tasks = [], categories = [], users = ['Viki','Manja','Skupaj'];
     let currentUser = localStorage.getItem('cu') || 'Manja';
+    let lastIndividualUser = localStorage.getItem('liu') || (currentUser === 'Skupaj' ? 'Manja' : currentUser);
     let selectedDate = new Date();
     let calViewDate = new Date();
     let activeView = 'home';
@@ -933,6 +934,10 @@
     function finishProfilePick(u) {
         currentUser = u;
         localStorage.setItem('cu', u);
+        if (u !== 'Skupaj') {
+            lastIndividualUser = u;
+            localStorage.setItem('liu', u);
+        }
         document.getElementById('profilePickerModal').classList.remove('open');
         buildUserStrip();
         renderCalendar();
@@ -1021,6 +1026,10 @@
     function switchUser(u) {
         currentUser = u;
         localStorage.setItem('cu', u);
+        if (u !== 'Skupaj') {
+            lastIndividualUser = u;
+            localStorage.setItem('liu', u);
+        }
         buildUserStrip();
         renderCalendar();
         renderHome();
@@ -1029,10 +1038,10 @@
 
     function buildUserManage() {
         const el = document.getElementById('userManage');
-        const labels = { 'Viki': '💜', 'Manja': '🌸', 'Admin': '⚙️' };
-        el.innerHTML = users.map(u => `
+        const l = { 'Viki': '💜', 'Manja': '🌸', 'Skupaj': '💌' };
+        el.innerHTML = ['Viki','Manja'].map(u => `
             <div class="cat-item">
-                <div class="user-avatar" style="background:var(--bg-card)">${labels[u]||'👤'}</div>
+                <div class="user-avatar" style="background:var(--bg-card)">${l[u]||'👤'}</div>
                 <span class="cat-name">${u}</span>
                 <span style="font-size:0.85rem;color:var(--txt-3);font-weight:700">${tasks.filter(t=>t && t.user===u).length} plans</span>
             </div>
@@ -1428,9 +1437,11 @@
             document.getElementById('fCategory').value = t.category || '';
             document.getElementById('fRemind').value = t.remindDays || 2;
             document.getElementById('fNote').value = t.note || '';
-            document.getElementById('fUser').value = t.user || 'Viki';
+            document.getElementById('fUser').value = t.user || lastIndividualUser;
             document.getElementById('fCelebrate').checked = !!t.celebrate;
             dateField.removeAttribute('readonly');
+            dateField.style.opacity = '1';
+            dateField.style.pointerEvents = 'auto';
         } else {
             document.getElementById('fTitle').value = '';
             document.getElementById('fDate').value = toIsoDate(selectedDate);
@@ -1438,11 +1449,8 @@
             document.getElementById('fRemind').value = 2;
             document.getElementById('fNote').value = '';
             document.getElementById('fCelebrate').checked = false;
+            document.getElementById('fUser').value = lastIndividualUser;
             
-            // Default to current user, unless in "Skupaj" mode, then default to Viki
-            document.getElementById('fUser').value = (currentUser === 'Skupaj') ? 'Viki' : currentUser;
-
-            // Handle date auto-lock
             if (dateAutoLocked) {
                 dateField.setAttribute('readonly', true);
                 dateField.style.opacity = '0.7';
@@ -1495,7 +1503,7 @@
             category: document.getElementById('fCategory').value,
             remindDays: parseInt(document.getElementById('fRemind').value)||2,
             note: document.getElementById('fNote').value.trim(),
-            user: (currentUser === 'Skupaj') ? document.getElementById('fUser').value : currentUser,
+            user: document.getElementById('fUser').value, // Respect the dropdown value!
             celebrate: document.getElementById('fCelebrate').checked
         };
         if(editId) {
