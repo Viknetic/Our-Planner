@@ -13,7 +13,7 @@ const BACKUP_DIR = path.join(DATA_DIR, 'backups');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
 if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR);
 
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static(__dirname));
 
 // Initialize data if not exists
@@ -65,6 +65,36 @@ app.post('/api/data', (req, res) => {
     }
 });
 
+// Upload and replace app icon
+app.post('/api/upload-icon', (req, res) => {
+    try {
+        const { image } = req.body;
+        if (!image) return res.status(400).json({ error: 'No image data provided' });
+
+        const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
+        const buffer = Buffer.from(base64Data, 'base64');
+        
+        fs.writeFileSync(path.join(__dirname, 'icon.png'), buffer);
+
+        // Update manifest with cache bust
+        const manifestPath = path.join(__dirname, 'manifest.json');
+        if (fs.existsSync(manifestPath)) {
+            let manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+            const v = Date.now();
+            if (manifest.icons) {
+                manifest.icons.forEach(ico => {
+                    ico.src = ico.src.split('?')[0] + '?v=' + v;
+                });
+            }
+            fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+        }
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Upload Error:', err);
+        res.status(500).json({ error: 'Failed to upload icon' });
+    }
+});
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n🚀 Our Planner Server Running`);

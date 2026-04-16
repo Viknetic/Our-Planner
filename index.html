@@ -753,6 +753,11 @@
                 <div style="margin-top:1.5rem;font-size:0.72rem;font-weight:800;color:var(--txt-2);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.75rem">Upravljanje uporabnikov</div>
                 <div id="userManage"></div>
                 
+                <div style="margin-top:1.5rem;font-size:0.72rem;font-weight:800;color:var(--txt-2);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.75rem">Ikona aplikacije</div>
+                <button class="btn btn-secondary btn-full" onclick="changeAppIcon()">
+                    <i data-lucide="image" size="18"></i> Spremeni ikono PWA
+                </button>
+                
                 <button class="btn btn-secondary btn-full" style="margin-top:2rem" onclick="localStorage.removeItem('cu'); location.reload();">
                     <i data-lucide="log-out" size="18"></i> Ponastavi profil
                 </button>
@@ -1398,6 +1403,43 @@
     // ===== UTILS =====
     function escHtml(str) {
         return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ===== CUSTOM APP ICON =====
+    async function changeAppIcon() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/png, image/jpeg, image/webp';
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            toast('Nalaganje ikone...', 3000);
+            
+            try {
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    const base64 = event.target.result;
+                    const res = await fetch('/api/upload-icon', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ image: base64 })
+                    });
+
+                    if (res.ok) {
+                        toast('Ikona posodobljena! Osvežite za prikaz.', 2000);
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        toast('Napaka pri nalaganju.', 3000);
+                    }
+                };
+                reader.readAsDataURL(file);
+            } catch (err) {
+                console.error(err);
+                toast('Napaka pri obdelavi slike.', 3000);
+            }
+        };
+        input.click();
     }
 
     // ===== SWIPE TO CHANGE WEEK =====
