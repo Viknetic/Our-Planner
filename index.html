@@ -828,8 +828,11 @@
                     </button>
                 </div>
                 <div style="margin-top:1.5rem;font-size:0.72rem;font-weight:800;color:var(--txt-2);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.75rem">Upravljanje uporabnikov</div>
-                <div id="userManage"></div>
-                
+                <div style="margin-top:1.5rem;font-size:0.72rem;font-weight:800;color:var(--txt-2);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.75rem">Smetnjak & Zgodovina (30 dni)</div>
+                <button class="btn btn-secondary btn-full" onclick="openTrash()">
+                    <i data-lucide="history" size="18"></i> Odpri smetnjak
+                </button>
+
                 <div style="margin-top:1.5rem;font-size:0.72rem;font-weight:800;color:var(--txt-2);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.75rem">Ikona aplikacije</div>
                 <button class="btn btn-secondary btn-full" onclick="changeAppIcon()">
                     <i data-lucide="image" size="18"></i> Spremeni ikono PWA
@@ -838,6 +841,21 @@
                 <button class="btn btn-secondary btn-full" style="margin-top:2rem" onclick="localStorage.removeItem('cu'); location.reload();">
                     <i data-lucide="log-out" size="18"></i> Ponastavi profil
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TRASH MODAL ===== -->
+    <div class="modal-overlay" id="trashModal" onclick="if(event.target===this)closeTrash()">
+        <div class="modal-sheet">
+            <div class="modal-handle"></div>
+            <div class="modal-header">
+                <div class="modal-title">Smetnjak</div>
+                <button class="ibtn" onclick="closeTrash()"><i data-lucide="x" size="20"></i></button>
+            </div>
+            <div class="modal-body modal-pad-bottom">
+                <p style="font-size:0.85rem;color:var(--txt-3);margin-bottom:1.5rem;font-weight:600;text-align:center">Naloge se po 30 dneh samodejno izbrišejo.</p>
+                <div id="trashList" class="task-list"></div>
             </div>
         </div>
     </div>
@@ -908,6 +926,7 @@
 
             buildUserStrip();
             buildUserManage();
+            purgeOldTrash();
             renderWeekStrip();
             renderCalendar();
             renderHome();
@@ -997,6 +1016,14 @@
         haptic();
     }
 
+    // ===== DATA PURGE =====
+    function purgeOldTrash() {
+        const thirtyDaysAgo = Date.now() - (30 * 86400000);
+        const originalCount = tasks.length;
+        tasks = tasks.filter(t => !t.deletedAt || t.deletedAt > thirtyDaysAgo);
+        if (tasks.length !== originalCount) saveData(false);
+    }
+
     // ===== NAVIGATION =====
     function nav(view) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -1060,7 +1087,7 @@
         for(let i=0; i<7; i++) {
             const d = new Date(start); d.setDate(start.getDate()+i);
             const ds = toIsoDate(d);
-            const dayTasks = tasks.filter(t => t && t.date===ds && (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser));
+            const dayTasks = tasks.filter(t => t && !t.deletedAt && t.date===ds && (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser));
             const isToday = ds === TODAY;
             const isSel = ds === toIsoDate(selectedDate);
             const div = document.createElement('div');
@@ -1110,7 +1137,7 @@
         for(let i=1;i<=days;i++){
             const d = new Date(y,m,i);
             const ds = toIsoDate(d);
-            const dayTasks = tasks.filter(t=>t && t.date===ds && (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser));
+            const dayTasks = tasks.filter(t=>t && !t.deletedAt && t.date===ds && (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser));
             const hasTasks = dayTasks.length > 0;
             const isToday = ds===TODAY;
             const isSel = ds===toIsoDate(selectedDate);
@@ -1174,7 +1201,7 @@
         const isToday = ds === TODAY;
         document.getElementById('dayTitle').textContent = isToday ? 'Danes' : toDisplayDate(selectedDate);
 
-        let filtered = tasks.filter(t => t && (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser) && t.date===ds);
+        let filtered = tasks.filter(t => t && !t.deletedAt && (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser) && t.date===ds);
         if(activeFilter !== 'all') filtered = filtered.filter(t => t.category === activeFilter);
 
         const done = filtered.filter(t=>t.completed).length;
@@ -1200,7 +1227,7 @@
     // ===== FILTER STRIP =====
     function renderFilterStrip(ds) {
         const el = document.getElementById('filterStrip');
-        const dayCats = [...new Set(tasks.filter(t => t && (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser) && t.date===ds).map(t=>t.category))];
+        const dayCats = [...new Set(tasks.filter(t => t && !t.deletedAt && (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser) && t.date===ds).map(t=>t.category))];
         
         let html = `<div class="filter-chip ${activeFilter==='all'?'active':''}" 
                          style="${activeFilter==='all' ? 'background:var(--p); border-color:transparent' : ''}" 
@@ -1306,10 +1333,10 @@
         const el = document.getElementById('allTaskList');
         const ds = toIsoDate(selectedDate);
         el.innerHTML = '';
-        const labels = { 'Viki':'💜','Manja':'🌸','Admin':'⚙️' };
+        const labels = { 'Viki':'💜','Manja':'🌸','Skupaj':'💌' };
         let totalCount = 0;
-        users.forEach(u => {
-            const uTasks = tasks.filter(t=>t && t.user===u && t.date===ds);
+        users.filter(u => u !== 'Skupaj').forEach(u => {
+            const uTasks = tasks.filter(t=>t && !t.deletedAt && t.user===u && t.date===ds);
             totalCount += uTasks.length;
             const sec = document.createElement('div');
             sec.innerHTML = `<div class="user-section-title"><span style="font-size:1.2rem">${labels[u]||'👤'}</span>${u} <span style="font-size:0.8rem;color:var(--txt-3);font-weight:500">(${uTasks.length})</span></div>`;
@@ -1329,7 +1356,7 @@
         const q = document.getElementById('searchInput').value.trim().toLowerCase();
         const el = document.getElementById('searchResults');
         if(!q) { el.innerHTML = ''; return; }
-        const res = tasks.filter(t => t && ((t.title||'').toLowerCase().includes(q) || (t.note||'').toLowerCase().includes(q) || (t.user||'').toLowerCase().includes(q)));
+        const res = tasks.filter(t => t && !t.deletedAt && ((t.title||'').toLowerCase().includes(q) || (t.note||'').toLowerCase().includes(q) || (t.user||'').toLowerCase().includes(q)));
         renderTaskList(res, 'searchResults');
     }
 
@@ -1337,7 +1364,7 @@
     function checkUpcoming() {
         const soon = [];
         tasks.forEach(t => {
-            if(t && !t.completed && t.remindDays && (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser)) {
+            if(t && !t.deletedAt && !t.completed && t.remindDays && (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser)) {
                 const diff = (new Date(t.date) - new Date()) / 86400000;
                 if(diff >= 0 && diff <= parseInt(t.remindDays)) soon.push(t);
             }
@@ -1530,20 +1557,87 @@
                     colors: [getComputedStyle(document.documentElement).getPropertyValue('--p').trim(), '#ffffff', '#ffd700']
                 });
             }
-            toast('Task done! ✓', 1200);
+            toast('Opravljeno! ✓ (Arhivirano)', 1500);
+            t.deletedAt = Date.now(); // Instantly move to history
+        } else {
+            t.deletedAt = null;
         }
         
         saveData(false);
         renderHome();
+        renderCalendar();
+        renderWeekStrip();
         haptic();
     }
 
     function deleteTask() {
         const id = document.getElementById('editId').value;
         if(!id) return;
-        tasks = tasks.filter(x=>x.id!==id);
+        const t = tasks.find(x=>x.id===id);
+        if(t) t.deletedAt = Date.now();
         saveData().then(() => { closeTaskModal(); renderCalendar(); renderWeekStrip(); renderHome(); });
-        toast('Task deleted', 1500);
+        toast('Naloga v smetnjaku', 1500);
+        haptic();
+    }
+
+    // ===== TRASH LOGIC =====
+    function openTrash() { 
+        document.getElementById('trashModal').classList.add('open'); 
+        renderTrash(); 
+    }
+    function closeTrash() { document.getElementById('trashModal').classList.remove('open'); }
+
+    function renderTrash() {
+        const el = document.getElementById('trashList');
+        const trashTasks = tasks.filter(t => t.deletedAt).sort((a,b) => b.deletedAt - a.deletedAt);
+        if(!trashTasks.length) {
+            el.innerHTML = '<div class="empty-state"><div class="empty-sub">Smetnjak je prazen.</div></div>';
+            return;
+        }
+        el.innerHTML = trashTasks.map(t => {
+            const cat = categories.find(c=>c.name===t.category) || {color:'#888'};
+            return `
+                <div class="task-card" style="opacity:0.8">
+                    <div class="task-body">
+                        <div class="task-name">${escHtml(t.title)}</div>
+                        <div class="task-meta-row">
+                            <span class="task-badge" style="background:${cat.color}">${t.category}</span>
+                            <span class="task-badge" style="background:var(--bg-2);color:var(--txt-2)">${t.user}</span>
+                            <span style="font-size:0.75rem;color:var(--txt-3)">${new Date(t.deletedAt).toLocaleDateString()}</span>
+                        </div>
+                    </div>
+                    <button class="ibtn" onclick="restoreTask('${t.id}')" style="background:var(--p);color:white;border:none">
+                        <i data-lucide="rotate-ccw" size="18"></i>
+                    </button>
+                    <button class="ibtn" onclick="permanentlyDeleteTask('${t.id}')" style="background:rgba(239,68,68,0.1);color:var(--red);border:none;margin-left:5px">
+                        <i data-lucide="trash" size="18"></i>
+                    </button>
+                </div>
+            `;
+        }).join('');
+        lucide.createIcons();
+    }
+
+    function restoreTask(id) {
+        const t = tasks.find(x=>x.id===id);
+        if(t) {
+            t.deletedAt = null;
+            t.completed = false; // reset to active
+            saveData(false);
+            renderTrash();
+            renderHome();
+            renderCalendar();
+            renderWeekStrip();
+            toast('Naloga obnovljena! ♻️');
+            haptic();
+        }
+    }
+
+    function permanentlyDeleteTask(id) {
+        if(!confirm('Trajno izbrišem to nalogo?')) return;
+        tasks = tasks.filter(x=>x.id!==id);
+        saveData(false);
+        renderTrash();
         haptic();
     }
 
