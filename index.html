@@ -283,9 +283,9 @@
             z-index: 2;
         }
         .cal-day.has-task::after {
-            content: ''; position: absolute; bottom: 6px;
-            width: 4px; height: 4px; border-radius: 50%; background: var(--acc);
-            box-shadow: 0 0 5px var(--acc-glow);
+            content: ''; position: absolute; bottom: 4px;
+            width: 4px; height: 4px; border-radius: 50%; background: var(--dot-color, var(--acc));
+            box-shadow: 0 0 5px var(--dot-color, var(--acc));
         }
         .cal-day.overdue-day { color: var(--red); }
 
@@ -1090,13 +1090,26 @@
         for(let i=1;i<=days;i++){
             const d = new Date(y,m,i);
             const ds = toIsoDate(d);
-            const hasTasks = tasks.some(t=>t && t.date===ds && (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser));
+            const dayTasks = tasks.filter(t=>t && t.date===ds && (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser));
+            const hasTasks = dayTasks.length > 0;
             const isToday = ds===TODAY;
             const isSel = ds===toIsoDate(selectedDate);
-            const isOverdue = ds<TODAY && hasTasks && tasks.some(t=>t && t.date===ds && (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser) && !t.completed);
+            const isOverdue = ds<TODAY && hasTasks && dayTasks.some(t=>!t.completed);
+            
             const div = document.createElement('div');
             div.className = 'cal-day'+(isToday?' today':'')+(isSel?' selected':'')+(hasTasks?' has-task':'')+(isOverdue?' overdue-day':'');
             div.textContent = i;
+
+            if (hasTasks && !isSel) {
+                const firstTask = dayTasks[0];
+                const cat = categories.find(c => c.name === firstTask.category);
+                if (cat) {
+                    div.style.borderColor = cat.color + '66'; // Subtle border
+                    div.style.background = cat.color + '15'; // Very subtle glow
+                    div.style.setProperty('--dot-color', cat.color);
+                }
+            }
+
             div.onclick = () => {
                 const now = Date.now();
                 if (now - lastTap < 300 && lastDateStr === ds) {
@@ -1231,6 +1244,8 @@
                 new Sortable(el, {
                     animation: 150,
                     ghostClass: 'sortable-ghost',
+                    delay: 150, // Allow tap to work before drag starts
+                    delayOnTouchOnly: true,
                     onEnd: function (evt) {
                         const newOrder = Array.from(el.children).map(row => row.dataset.id).filter(id => id);
                         if (!newOrder.length) return;
