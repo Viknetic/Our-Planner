@@ -12,7 +12,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@0.453.0/dist/umd/lucide.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -905,7 +905,11 @@
             lucide.createIcons();
         } catch (err) {
             console.error('Init Error:', err);
-            toast('Napaka pri nalaganju. Poskusite znova.');
+            toast('Napaka pri nalaganju: ' + err.message, 5000);
+        }
+
+        if (typeof lucide !== 'undefined') {
+            try { lucide.createIcons(); } catch(e) {}
         }
 
         // SW Update check
@@ -932,16 +936,25 @@
     async function loadData() {
         try {
             const r = await fetch('/api/data');
+            if (!r.ok) throw new Error('Strežnik ni dosegljiv');
             const d = await r.json();
             tasks = d.tasks || [];
             categories = d.categories || [];
-            buildCategorySelects();
+            localStorage.setItem('plannerData', JSON.stringify({tasks, categories}));
         } catch(e) {
-            console.warn('Offline mode');
+            console.warn('Offline mode', e);
             const cached = localStorage.getItem('plannerData');
-            if(cached) { const d = JSON.parse(cached); tasks = d.tasks||[]; categories = d.categories||[]; }
-            buildCategorySelects();
+            if(cached) { 
+                try {
+                    const d = JSON.parse(cached); 
+                    tasks = d.tasks||[]; 
+                    categories = d.categories||[]; 
+                } catch(pe) {
+                    console.error('Cache parse error', pe);
+                }
+            }
         }
+        buildCategorySelects();
     }
 
     async function saveData(showToast = true) {

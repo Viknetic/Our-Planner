@@ -1,11 +1,11 @@
-const CACHE_NAME = 'our-planner-premium-v3';
+const CACHE_NAME = 'our-planner-premium-v4';
 const ASSETS = [
   '/',
   'index.html',
   'manifest.json',
   'icon.png',
   'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap',
-  'https://unpkg.com/lucide@latest',
+  'https://unpkg.com/lucide@0.453.0/dist/umd/lucide.min.js',
   'https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js',
   'https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js'
 ];
