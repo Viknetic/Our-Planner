@@ -65,30 +65,6 @@ app.post('/api/data', (req, res) => {
     }
 });
 
-app.get('/api/stats', (req, res) => {
-    try {
-        const totalMem = os.totalmem();
-        const freeMem = os.freemem();
-        const usedMem = totalMem - freeMem;
-        const loadAvg = os.loadavg();
-        
-        res.json({
-            ram: {
-                total: (totalMem / 1024 / 1024 / 1024).toFixed(1) + 'GB',
-                used: (usedMem / 1024 / 1024 / 1024).toFixed(1) + 'GB',
-                percent: Math.round((usedMem / totalMem) * 100) + '%'
-            },
-            cpu: {
-                load: loadAvg[0].toFixed(2),
-                model: os.cpus()[0].model,
-                cores: os.cpus().length
-            },
-            uptime: Math.round(os.uptime() / 3600) + 'h'
-        });
-    } catch (e) {
-        res.status(500).json({ error: 'Stats failed' });
-    }
-});
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n🚀 Our Planner Server Running`);
