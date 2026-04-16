@@ -69,30 +69,39 @@ app.post('/api/data', (req, res) => {
 app.post('/api/upload-icon', (req, res) => {
     try {
         const { image } = req.body;
-        if (!image) return res.status(400).json({ error: 'No image data provided' });
+        if (!image) return res.status(400).json({ error: 'Nihče ni poslal slike' });
 
-        const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
+        // More robust base64 parsing (handles various data URL formats)
+        const base64Parts = image.split(';base64,');
+        const base64Data = base64Parts.length > 1 ? base64Parts[1] : base64Parts[0];
         const buffer = Buffer.from(base64Data, 'base64');
         
-        fs.writeFileSync(path.join(__dirname, 'icon.png'), buffer);
+        // Ensure we are writing to the correct path
+        const iconPath = path.join(__dirname, 'icon.png');
+        fs.writeFileSync(iconPath, buffer);
 
         // Update manifest with cache bust
         const manifestPath = path.join(__dirname, 'manifest.json');
         if (fs.existsSync(manifestPath)) {
-            let manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-            const v = Date.now();
-            if (manifest.icons) {
-                manifest.icons.forEach(ico => {
-                    ico.src = ico.src.split('?')[0] + '?v=' + v;
-                });
+            try {
+                let manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+                const v = Date.now();
+                if (manifest.icons) {
+                    manifest.icons.forEach(ico => {
+                        ico.src = ico.src.split('?')[0] + '?v=' + v;
+                    });
+                }
+                fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+            } catch (manifestErr) {
+                console.error('Manifest Update Error:', manifestErr);
+                // We still succeed icon upload even if manifest update fails
             }
-            fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
         }
 
         res.json({ success: true });
     } catch (err) {
         console.error('Upload Error:', err);
-        res.status(500).json({ error: 'Failed to upload icon' });
+        res.status(500).json({ error: 'Napaka na strežniku: ' + err.message });
     }
 });
 

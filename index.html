@@ -1430,7 +1430,8 @@
                         toast('Ikona posodobljena! Osvežite za prikaz.', 2000);
                         setTimeout(() => location.reload(), 1500);
                     } else {
-                        toast('Napaka pri nalaganju.', 3000);
+                        const errData = await res.json().catch(() => ({}));
+                        toast('Napaka: ' + (errData.error || 'Nalaganje ni uspelo'), 4000);
                     }
                 };
                 reader.readAsDataURL(file);
