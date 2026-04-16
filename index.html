@@ -1395,14 +1395,8 @@
         document.getElementById('taskModalTitle').textContent = id ? 'Uredi nalogo' : 'Nova naloga';
         buildCategorySelects();
 
-        // Show user selector if in "Skupaj" mode
-        const userField = document.getElementById('fUserField');
-        if (currentUser === 'Skupaj') {
-            userField.style.display = 'block';
-            document.getElementById('fUser').value = 'Viki'; // Default to Viki in combined mode
-        } else {
-            userField.style.display = 'none';
-        }
+        // Always show user selector so tasks can be moved between profiles
+        document.getElementById('fUserField').style.display = 'block';
 
         if(id) {
             const t = tasks.find(x=>x.id===id);
@@ -1424,6 +1418,9 @@
             document.getElementById('fNote').value = '';
             document.getElementById('fCelebrate').checked = false;
             
+            // Default to current user, unless in "Skupaj" mode, then default to Viki
+            document.getElementById('fUser').value = (currentUser === 'Skupaj') ? 'Viki' : currentUser;
+
             // Handle date auto-lock
             if (dateAutoLocked) {
                 dateField.setAttribute('readonly', true);
@@ -1437,7 +1434,6 @@
         }
         modal.classList.add('open');
         updatePickers();
-        setTimeout(() => document.getElementById('fTitle').focus(), 300);
         lucide.createIcons();
     }
 
