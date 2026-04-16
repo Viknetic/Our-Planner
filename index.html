@@ -456,7 +456,7 @@
                         <div class="tasks-title" id="dayTitle">Today</div>
                         <div class="tasks-meta" id="taskMeta">Loading...</div>
                     </div>
-                    <button class="ibtn" onclick="openTaskModal()" title="Add task" style="background:linear-gradient(135deg,var(--p),var(--acc));border-color:transparent;color:white">
+                    <button class="ibtn" onclick="openTaskModal(null, false)" title="Add task" style="background:linear-gradient(135deg,var(--p),var(--acc));border-color:transparent;color:white">
                         <i data-lucide="plus" size="22"></i>
                     </button>
                 </div>
@@ -502,7 +502,7 @@
                     <i data-lucide="users" size="24"></i>
                     <span class="nav-label">All</span>
                 </div>
-                <button class="nav-add-btn" onclick="openTaskModal()">
+                <button class="nav-add-btn" onclick="openTaskModal(null, false)">
                     <i data-lucide="plus" size="28"></i>
                 </button>
                 <div class="nav-item" id="nav-search" onclick="nav('search')">
@@ -606,8 +606,18 @@
     let darkMode = localStorage.getItem('theme') !== 'light';
     let lastTap = 0, lastDateStr = '';
 
-    const TODAY = new Date().toISOString().split('T')[0];
+    function toIsoDate(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+
+    const TODAY = toIsoDate(new Date());
     const COLOR_PRESETS = ['#7c6ef0','#ec4899','#22d3a8','#f59e0b','#f87171','#38bdf8','#a78bfa','#fb923c'];
+
+    // ===== KEYBOARD EVENTS =====
+    document.addEventListener('keydown', (e) => {
+        if (e.key === '+' || e.key === '=') {
+            e.preventDefault();
+            openTaskModal(null, true); // Open with date auto-locked
+        }
+    });
 
     // ===== INIT =====
     async function init() {
@@ -721,10 +731,10 @@
         el.innerHTML = '';
         for(let i=0; i<7; i++) {
             const d = new Date(start); d.setDate(start.getDate()+i);
-            const ds = d.toISOString().split('T')[0];
+            const ds = toIsoDate(d);
             const dayTasks = tasks.filter(t => t.date===ds && t.user===currentUser);
             const isToday = ds === TODAY;
-            const isSel = ds === selectedDate.toISOString().split('T')[0];
+            const isSel = ds === toIsoDate(selectedDate);
             const div = document.createElement('div');
             div.className = 'wday' + (isToday?' today':'') + (isSel?' selected':'');
             const dotsHtml = dayTasks.slice(0,3).map(t => {
@@ -736,7 +746,7 @@
                 const now = Date.now();
                 if (now - lastTap < 300 && lastDateStr === ds) {
                     selectedDate = d;
-                    openTaskModal();
+                    openTaskModal(null, true);
                 } else {
                     selectedDate = d;
                     renderWeekStrip(); renderCalendar(); renderHome(); haptic();
@@ -765,10 +775,10 @@
         }
         for(let i=1;i<=days;i++){
             const d = new Date(y,m,i);
-            const ds = d.toISOString().split('T')[0];
+            const ds = toIsoDate(d);
             const hasTasks = tasks.some(t=>t.date===ds && t.user===currentUser);
             const isToday = ds===TODAY;
-            const isSel = ds===selectedDate.toISOString().split('T')[0];
+            const isSel = ds===toIsoDate(selectedDate);
             const isOverdue = ds<TODAY && hasTasks && tasks.some(t=>t.date===ds&&t.user===currentUser&&!t.completed);
             const div = document.createElement('div');
             div.className = 'cal-day'+(isToday?' today':'')+(isSel?' selected':'')+(hasTasks?' has-task':'')+(isOverdue?' overdue-day':'');
@@ -777,7 +787,7 @@
                 const now = Date.now();
                 if (now - lastTap < 300 && lastDateStr === ds) {
                     selectedDate = d;
-                    openTaskModal();
+                    openTaskModal(null, true);
                 } else {
                     selectedDate = d;
                     renderWeekStrip(); renderCalendar(); renderHome(); haptic();
@@ -801,7 +811,7 @@
 
     // ===== RENDER HOME =====
     function renderHome() {
-        const ds = selectedDate.toISOString().split('T')[0];
+        const ds = toIsoDate(selectedDate);
         const isToday = ds === TODAY;
         const opts = {weekday:'long',month:'long',day:'numeric'};
         document.getElementById('dayTitle').textContent = isToday ? 'Today' : selectedDate.toLocaleDateString('en-US',{month:'long',day:'numeric'});
@@ -881,7 +891,7 @@
     // ===== ALL USERS VIEW =====
     function renderAll() {
         const el = document.getElementById('allTaskList');
-        const ds = selectedDate.toISOString().split('T')[0];
+        const ds = toIsoDate(selectedDate);
         el.innerHTML = '';
         const labels = { 'Viki':'💜','Manja':'🌸','Admin':'⚙️' };
         let totalCount = 0;
@@ -994,8 +1004,9 @@
     }
 
     // ===== TASK MODAL =====
-    function openTaskModal(id = null) {
+    function openTaskModal(id = null, dateAutoLocked = false) {
         const modal = document.getElementById('taskModal');
+        const dateField = document.getElementById('fDate');
         document.getElementById('editId').value = id || '';
         document.getElementById('delBtn').style.display = id ? 'flex' : 'none';
         document.getElementById('taskModalTitle').textContent = id ? 'Edit Task' : 'New Task';
@@ -1009,12 +1020,24 @@
             document.getElementById('fCategory').value = t.category || '';
             document.getElementById('fRemind').value = t.remindDays || 2;
             document.getElementById('fNote').value = t.note || '';
+            dateField.removeAttribute('readonly');
         } else {
             document.getElementById('fTitle').value = '';
-            document.getElementById('fDate').value = selectedDate.toISOString().split('T')[0];
+            document.getElementById('fDate').value = toIsoDate(selectedDate);
             document.getElementById('fTime').value = '';
             document.getElementById('fRemind').value = 2;
             document.getElementById('fNote').value = '';
+            
+            // Handle date auto-lock
+            if (dateAutoLocked) {
+                dateField.setAttribute('readonly', true);
+                dateField.style.opacity = '0.7';
+                dateField.style.pointerEvents = 'none';
+            } else {
+                dateField.removeAttribute('readonly');
+                dateField.style.opacity = '1';
+                dateField.style.pointerEvents = 'auto';
+            }
         }
         modal.classList.add('open');
         setTimeout(() => document.getElementById('fTitle').focus(), 300);
