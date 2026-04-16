@@ -652,8 +652,8 @@
                     <div class="cal-nav">
                         <div class="cal-month-title" id="calMonthTitle"></div>
                         <div class="cal-nav-btns">
-                            <button class="ibtn" onclick="prevMonth()" style="width:36px;height:36px;border-radius:10px"><i data-lucide="chevron-left" size="18"></i></button>
-                            <button class="ibtn" onclick="nextMonth()" style="width:36px;height:36px;border-radius:10px"><i data-lucide="chevron-right" size="18"></i></button>
+                            <button class="ibtn" onclick="prevMonth()" style="width:44px;height:44px;border-radius:12px"><i data-lucide="chevron-left" size="20"></i></button>
+                            <button class="ibtn" onclick="nextMonth()" style="width:44px;height:44px;border-radius:12px"><i data-lucide="chevron-right" size="20"></i></button>
                         </div>
                     </div>
                     <div class="cal-grid" id="calGrid"></div>
@@ -886,22 +886,35 @@
 
     // ===== INIT =====
     async function init() {
-        applyTheme();
-        buildColorPresets();
-        await loadData();
-        
-        // Profile persistence / selection
-        if (!localStorage.getItem('cu')) {
-            document.getElementById('profilePickerModal').classList.add('open');
+        try {
+            applyTheme();
+            buildColorPresets();
+            await loadData();
+            
+            // Profile persistence / selection
+            if (!localStorage.getItem('cu')) {
+                document.getElementById('profilePickerModal').classList.add('open');
+            }
+
+            buildUserStrip();
+            buildUserManage();
+            renderWeekStrip();
+            renderCalendar();
+            renderHome();
+            checkUpcoming();
+            lucide.createIcons();
+        } catch (err) {
+            console.error('Init Error:', err);
+            toast('Napaka pri nalaganju. Poskusite znova.');
         }
 
-        buildUserStrip();
-        buildUserManage();
-        renderWeekStrip();
-        renderCalendar();
-        renderHome();
-        checkUpcoming();
-        lucide.createIcons();
+        // SW Update check
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                toast('Nova različica na voljo! Osveževanje...', 3000);
+                setTimeout(() => location.reload(), 1500);
+            });
+        }
     }
 
     function finishProfilePick(u) {
@@ -1029,9 +1042,11 @@
                 const now = Date.now();
                 if (now - lastTap < 300 && lastDateStr === ds) {
                     selectedDate = d;
+                    syncCalView();
                     openTaskModal(null, true);
                 } else {
                     selectedDate = d;
+                    syncCalView();
                     renderWeekStrip(); renderCalendar(); renderHome(); haptic();
                 }
                 lastTap = now; lastDateStr = ds;
@@ -1072,9 +1087,11 @@
                 const now = Date.now();
                 if (now - lastTap < 300 && lastDateStr === ds) {
                     selectedDate = d;
+                    syncCalView();
                     openTaskModal(null, true);
                 } else {
                     selectedDate = d;
+                    syncCalView();
                     renderWeekStrip(); renderCalendar(); renderHome(); haptic();
                 }
                 lastTap = now; lastDateStr = ds;
@@ -1112,6 +1129,15 @@
         renderTaskList(filtered, 'taskList');
         buildUserManage();
         checkUpcoming();
+        syncCalView();
+    }
+
+    function syncCalView() {
+        // Ensure calendar view shows the month of the selected date if they mismatch
+        if (calViewDate.getMonth() !== selectedDate.getMonth() || calViewDate.getFullYear() !== selectedDate.getFullYear()) {
+            calViewDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+            renderCalendar();
+        }
     }
 
     // ===== FILTER STRIP =====
@@ -1530,19 +1556,23 @@
 
     // ===== SWIPE TO CHANGE WEEK =====
     (function() {
-        let startX = 0, startY = 0;
+        let startX = 0, startY = 0, startTime = 0;
         document.getElementById('mainScroll').addEventListener('touchstart', e => {
             startX = e.touches[0].clientX;
             startY = e.touches[0].clientY;
+            startTime = Date.now();
         }, { passive: true });
         document.getElementById('mainScroll').addEventListener('touchend', e => {
             if(activeView !== 'home') return;
             const dx = e.changedTouches[0].clientX - startX;
-            const dy = Math.abs(e.changedTouches[0].clientY - startY);
-            if(Math.abs(dx) > 60 && dy < 50) {
+            const dy = e.changedTouches[0].clientY - startY;
+            const dt = Date.now() - startTime;
+            
+            // Require a faster, cleaner horizontal swipe to avoid accidental jumps while scrolling vertically
+            if(Math.abs(dx) > 100 && Math.abs(dy) < 60 && dt < 400) {
                 if(dx < 0) { selectedDate.setDate(selectedDate.getDate()+7); }
                 else { selectedDate.setDate(selectedDate.getDate()-7); }
-                renderWeekStrip(); renderCalendar(); renderHome(); haptic();
+                renderWeekStrip(); renderHome(); renderCalendar(); haptic();
             }
         }, { passive: true });
     })();
