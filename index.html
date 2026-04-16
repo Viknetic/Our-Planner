@@ -264,24 +264,33 @@
         /* ===== CALENDAR CARD ===== */
         .cal-card {
             background: var(--bg-card); border: 1px solid var(--glass-border);
-            border-radius: var(--radius-2xl); padding: 1.75rem; margin-bottom: 1.5rem;
+            border-radius: var(--radius-2xl); padding: 1.25rem; margin-bottom: 1.5rem;
             box-shadow: var(--shadow-md);
         }
+        @media (min-width: 600px) { .cal-card { padding: 1.75rem; } }
         .cal-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.75rem; }
         .cal-month-title { font-size: 1.4rem; font-weight: 900; letter-spacing: -0.04em; color: var(--txt-1); }
         .cal-nav-btns { display: flex; gap: 0.75rem; }
 
-        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.75rem; }
-        .cal-dname { font-size: 0.72rem; font-weight: 900; color: var(--txt-3); text-align: center; padding-bottom: 12px; text-transform: uppercase; letter-spacing: 0.1em; }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.4rem; }
+        .cal-dname { font-size: 0.65rem; font-weight: 800; color: var(--txt-3); text-align: center; padding-bottom: 8px; text-transform: uppercase; letter-spacing: 0.1em; }
+        
+        @media (min-width: 600px) {
+            .cal-grid { gap: 0.75rem; }
+            .cal-dname { font-size: 0.72rem; padding-bottom: 12px; }
+        }
         .cal-day {
             aspect-ratio: 1; display: flex; flex-direction: column;
             align-items: center; justify-content: center; border-radius: 14px;
-            font-size: 1.15rem; font-weight: 700; cursor: pointer; gap: 4px;
+            font-size: 0.95rem; font-weight: 700; cursor: pointer; gap: 4px;
             transition: all 0.3s var(--ease); position: relative; 
             border: 2px solid transparent;
-            min-height: 64px;
             background-clip: padding-box, border-box;
             background-origin: padding-box, border-box;
+        }
+        
+        @media (min-width: 600px) {
+            .cal-day { font-size: 1.15rem; min-height: 64px; }
         }
         .cal-day:hover:not(.other):not(.selected) { background: var(--bg-2); }
         .cal-day:active { transform: scale(0.85); background: var(--glass-shine); }
