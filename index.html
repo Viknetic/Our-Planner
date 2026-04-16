@@ -938,7 +938,8 @@
             const r = await fetch('/api/data');
             if (!r.ok) throw new Error('Strežnik ni dosegljiv');
             const d = await r.json();
-            tasks = d.tasks || [];
+            // Clean tasks: remove nulls or items without IDs
+            tasks = (d.tasks || []).filter(t => t && t.id);
             categories = d.categories || [];
             localStorage.setItem('plannerData', JSON.stringify({tasks, categories}));
         } catch(e) {
@@ -947,7 +948,7 @@
             if(cached) { 
                 try {
                     const d = JSON.parse(cached); 
-                    tasks = d.tasks||[]; 
+                    tasks = (d.tasks||[]).filter(t => t && t.id); 
                     categories = d.categories||[]; 
                 } catch(pe) {
                     console.error('Cache parse error', pe);
@@ -1024,7 +1025,7 @@
             <div class="cat-item">
                 <div class="user-avatar" style="background:var(--bg-card)">${labels[u]||'👤'}</div>
                 <span class="cat-name">${u}</span>
-                <span style="font-size:0.85rem;color:var(--txt-3);font-weight:700">${tasks.filter(t=>t.user===u).length} plans</span>
+                <span style="font-size:0.85rem;color:var(--txt-3);font-weight:700">${tasks.filter(t=>t && t.user===u).length} plans</span>
             </div>
         `).join('');
     }
@@ -1041,7 +1042,7 @@
         for(let i=0; i<7; i++) {
             const d = new Date(start); d.setDate(start.getDate()+i);
             const ds = toIsoDate(d);
-            const dayTasks = tasks.filter(t => t.date===ds && (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser));
+            const dayTasks = tasks.filter(t => t && t.date===ds && (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser));
             const isToday = ds === TODAY;
             const isSel = ds === toIsoDate(selectedDate);
             const div = document.createElement('div');
@@ -1089,10 +1090,10 @@
         for(let i=1;i<=days;i++){
             const d = new Date(y,m,i);
             const ds = toIsoDate(d);
-            const hasTasks = tasks.some(t=>t.date===ds && (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser));
+            const hasTasks = tasks.some(t=>t && t.date===ds && (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser));
             const isToday = ds===TODAY;
             const isSel = ds===toIsoDate(selectedDate);
-            const isOverdue = ds<TODAY && hasTasks && tasks.some(t=>t.date===ds && (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser) && !t.completed);
+            const isOverdue = ds<TODAY && hasTasks && tasks.some(t=>t && t.date===ds && (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser) && !t.completed);
             const div = document.createElement('div');
             div.className = 'cal-day'+(isToday?' today':'')+(isSel?' selected':'')+(hasTasks?' has-task':'')+(isOverdue?' overdue-day':'');
             div.textContent = i;
@@ -1130,7 +1131,7 @@
         const isToday = ds === TODAY;
         document.getElementById('dayTitle').textContent = isToday ? 'Danes' : toDisplayDate(selectedDate);
 
-        let filtered = tasks.filter(t => (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser) && t.date===ds);
+        let filtered = tasks.filter(t => t && (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser) && t.date===ds);
         if(activeFilter !== 'all') filtered = filtered.filter(t => t.category === activeFilter);
 
         const done = filtered.filter(t=>t.completed).length;
@@ -1156,7 +1157,7 @@
     // ===== FILTER STRIP =====
     function renderFilterStrip(ds) {
         const el = document.getElementById('filterStrip');
-        const dayCats = [...new Set(tasks.filter(t => (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser) && t.date===ds).map(t=>t.category))];
+        const dayCats = [...new Set(tasks.filter(t => t && (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser) && t.date===ds).map(t=>t.category))];
         
         let html = `<div class="filter-chip ${activeFilter==='all'?'active':''}" 
                          style="${activeFilter==='all' ? 'background:var(--p); border-color:transparent' : ''}" 
@@ -1237,6 +1238,7 @@
                         const ds = toIsoDate(selectedDate);
                         // Identify tasks NOT in the current view/reorder set
                         const otherTasks = tasks.filter(t => {
+                            if (!t) return false;
                             const isSameDay = t.date === ds;
                             const isSameUser = (currentUser === 'Skupaj') ? (t.user === 'Viki' || t.user === 'Manja') : (t.user === currentUser);
                             return !(isSameDay && isSameUser);
@@ -1262,7 +1264,7 @@
         const labels = { 'Viki':'💜','Manja':'🌸','Admin':'⚙️' };
         let totalCount = 0;
         users.forEach(u => {
-            const uTasks = tasks.filter(t=>t.user===u && t.date===ds);
+            const uTasks = tasks.filter(t=>t && t.user===u && t.date===ds);
             totalCount += uTasks.length;
             const sec = document.createElement('div');
             sec.innerHTML = `<div class="user-section-title"><span style="font-size:1.2rem">${labels[u]||'👤'}</span>${u} <span style="font-size:0.8rem;color:var(--txt-3);font-weight:500">(${uTasks.length})</span></div>`;
@@ -1282,7 +1284,7 @@
         const q = document.getElementById('searchInput').value.trim().toLowerCase();
         const el = document.getElementById('searchResults');
         if(!q) { el.innerHTML = ''; return; }
-        const res = tasks.filter(t => (t.title||'').toLowerCase().includes(q) || (t.note||'').toLowerCase().includes(q) || t.user.toLowerCase().includes(q));
+        const res = tasks.filter(t => t && ((t.title||'').toLowerCase().includes(q) || (t.note||'').toLowerCase().includes(q) || (t.user||'').toLowerCase().includes(q)));
         renderTaskList(res, 'searchResults');
     }
 
@@ -1290,7 +1292,7 @@
     function checkUpcoming() {
         const soon = [];
         tasks.forEach(t => {
-            if(!t.completed && t.remindDays && (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser)) {
+            if(t && !t.completed && t.remindDays && (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser)) {
                 const diff = (new Date(t.date) - new Date()) / 86400000;
                 if(diff >= 0 && diff <= parseInt(t.remindDays)) soon.push(t);
             }
