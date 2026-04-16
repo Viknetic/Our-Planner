@@ -340,8 +340,10 @@
         .picker-display {
             position: absolute; left: 1rem; top: 50%; transform: translateY(-50%);
             pointer-events: none; font-size: 0.95rem; color: var(--txt-1); z-index: 1;
+            font-weight: 500;
         }
-        .form-input-picker { color: transparent !important; cursor: pointer; position: relative; z-index: 2; }
+        .picker-display.placeholder { opacity: 0.35; color: var(--txt-2); }
+        .form-input-picker { color: transparent !important; background: transparent !important; cursor: pointer; position: relative; z-index: 2; }
         .form-input-picker::-webkit-calendar-picker-indicator { position: absolute; right: 10px; opacity: 0.5; filter: invert(var(--darkModeInv)); z-index: 3; }
 
         /* ===== BUTTONS ===== */
@@ -1072,14 +1074,18 @@
         if (dVal) {
             const parts = dVal.split('-');
             dDisp.textContent = `${parts[2]}/${parts[1]}/${parts[0]}`;
+            dDisp.classList.remove('placeholder');
         } else {
             dDisp.textContent = 'DD/MM/YYYY';
+            dDisp.classList.add('placeholder');
         }
         
         if (tVal) {
-            tDisp.textContent = tVal; // input value is always HH:mm
+            tDisp.textContent = tVal;
+            tDisp.classList.remove('placeholder');
         } else {
-            tDisp.textContent = '--:--';
+            tDisp.textContent = '00:00';
+            tDisp.classList.add('placeholder');
         }
     }
 
