@@ -369,38 +369,47 @@
 
         /* ===== BOTTOM NAV ===== */
         .bottom-nav {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            background: rgba(5, 5, 10, 0.7);
-            backdrop-filter: blur(24px) saturate(180%);
-            -webkit-backdrop-filter: blur(24px) saturate(180%);
-            border-top: 1px solid var(--glass-border);
+            position: fixed; bottom: 20px; left: 20px; right: 20px;
+            background: rgba(15, 15, 30, 0.75);
+            backdrop-filter: blur(25px) saturate(200%);
+            -webkit-backdrop-filter: blur(25px) saturate(200%);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
             z-index: 200;
-            padding-bottom: var(--safe-bottom);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.05);
+            padding: 0 0.5rem;
+            max-width: 500px;
+            margin: 0 auto;
         }
         .nav-inner { 
             display: flex; align-items: center; 
-            height: var(--nav-h); padding: 0 0.5rem; 
-            max-width: 600px; margin: 0 auto;
+            height: 72px; width: 100%;
         }
         .nav-item {
             flex: 1; display: flex; flex-direction: column; align-items: center;
             justify-content: center; gap: 4px; cursor: pointer;
-            color: var(--txt-3); transition: all 0.3s var(--ease);
-            height: 100%; border-radius: 20px;
+            color: var(--txt-3); transition: all 0.4s var(--ease);
+            height: 100%; position: relative;
         }
-        .nav-item.active { color: #fff; }
-        .nav-item.active i { transform: translateY(-2px); color: var(--p-light); }
+        .nav-item.active { color: white; }
+        .nav-item.active i { transform: translateY(-4px); color: var(--p-light); filter: drop-shadow(0 0 8px var(--p-glow)); }
+        .nav-item.active::after {
+            content: ''; position: absolute; bottom: 12px;
+            width: 5px; height: 5px; border-radius: 50%;
+            background: var(--p-light); box-shadow: 0 0 10px var(--p-glow);
+        }
         .nav-item:active { transform: scale(0.9); }
-        .nav-label { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.7; }
+        .nav-label { font-size: 0.6rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.5; transition: opacity 0.3s; }
         .nav-item.active .nav-label { opacity: 1; }
 
         .nav-add-btn {
-            width: 58px; height: 58px; border-radius: 20px; flex-shrink: 0;
+            width: 56px; height: 56px; border-radius: 22px; flex-shrink: 0;
             background: linear-gradient(135deg, var(--p), var(--acc));
             display: grid; place-items: center; cursor: pointer;
-            box-shadow: 0 8px 32px var(--p-glow); margin: 0 0.5rem;
+            box-shadow: 0 8px 24px var(--p-glow); margin: 0 0.75rem;
             transition: all 0.4s var(--ease-bounce); border: none; color: white;
-            position: relative; top: -15px;
+            position: relative; top: -20px;
+            border: 3px solid var(--bg-0);
         }
         .nav-add-btn:active { transform: scale(0.85) rotate(-10deg); }
 
@@ -662,20 +671,27 @@
             </div>
             <div class="modal-body modal-pad-bottom">
                 <input type="hidden" id="editId">
+                <div class="form-field" id="fUserField" style="display:none">
+                    <label class="form-label">Uporabnik</label>
+                    <select class="form-select" id="fUser">
+                        <option value="Viki">Viki</option>
+                        <option value="Manja">Manja</option>
+                    </select>
+                </div>
                 <div class="form-field">
-                    <label class="form-label">Title</label>
-                    <input type="text" class="form-input" id="fTitle" placeholder="What's the plan?" autocomplete="off">
+                    <label class="form-label">Naslov</label>
+                    <input type="text" class="form-input" id="fTitle" placeholder="Kaj je v načrtu?" autocomplete="off">
                 </div>
                 <div class="form-row">
                     <div class="form-field">
-                        <label class="form-label">Date</label>
+                        <label class="form-label">Datum</label>
                         <div class="form-field-picker">
                             <div class="picker-display" id="fDateDisplay"></div>
                             <input type="date" class="form-input form-input-picker" id="fDate" oninput="updatePickers()">
                         </div>
                     </div>
                     <div class="form-field">
-                        <label class="form-label">Time (opt.)</label>
+                        <label class="form-label">Ura (neobvezno)</label>
                         <div class="form-field-picker">
                             <div class="picker-display" id="fTimeDisplay"></div>
                             <input type="time" class="form-input form-input-picker" id="fTime" oninput="updatePickers()">
@@ -684,24 +700,24 @@
                 </div>
                 <div class="form-row">
                     <div class="form-field">
-                        <label class="form-label">Tag</label>
+                        <label class="form-label">Oznaka</label>
                         <select class="form-select" id="fCategory"></select>
                     </div>
                     <div class="form-field">
-                        <label class="form-label">Remind (days)</label>
+                        <label class="form-label">Opomni (dni)</label>
                         <input type="number" class="form-input" id="fRemind" value="2" min="0" max="30">
                     </div>
                 </div>
                 <div class="form-field">
-                    <label class="form-label">Notes (optional)</label>
-                    <textarea class="form-textarea" id="fNote" placeholder="Any extra details…"></textarea>
+                    <label class="form-label">Zapiski (neobvezno)</label>
+                    <textarea class="form-textarea" id="fNote" placeholder="Dodatne podrobnosti…"></textarea>
                 </div>
                 <div class="btn-group">
                     <button class="btn btn-danger" id="delBtn" style="display:none" onclick="deleteTask()">
-                        <i data-lucide="trash-2" size="18"></i> Delete
+                        <i data-lucide="trash-2" size="18"></i> Izbriši
                     </button>
                     <button class="btn btn-primary" onclick="saveTask()">
-                        <i data-lucide="check" size="18"></i> Save
+                        <i data-lucide="check" size="18"></i> Shrani
                     </button>
                 </div>
             </div>
@@ -713,16 +729,16 @@
         <div class="modal-sheet">
             <div class="modal-handle"></div>
             <div class="modal-header">
-                <div class="modal-title">Settings</div>
+                <div class="modal-title">Nastavitve</div>
                 <button class="ibtn" onclick="closeSettings()"><i data-lucide="x" size="20"></i></button>
             </div>
             <div class="modal-body modal-pad-bottom">
-                <div style="font-size:0.72rem;font-weight:800;color:var(--txt-2);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.75rem">Manage Tags</div>
+                <div style="font-size:0.72rem;font-weight:800;color:var(--txt-2);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.75rem">Upravljanje oznak</div>
                 <div id="catList" style="margin-bottom:1rem"></div>
                 <div style="background:var(--bg-2);border-radius:20px;padding:1.25rem;border:1px solid var(--glass-border);">
-                    <div style="font-size:0.72rem;font-weight:800;color:var(--txt-2);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.75rem">New Tag</div>
+                    <div style="font-size:0.72rem;font-weight:800;color:var(--txt-2);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.75rem">Nova oznaka</div>
                     <div class="form-field" style="margin-bottom:0.75rem">
-                        <input type="text" class="form-input" id="newCatName" placeholder="Tag name…">
+                        <input type="text" class="form-input" id="newCatName" placeholder="Ime oznake…">
                     </div>
                     <div class="form-field" style="margin-bottom:0.75rem">
                         <div class="color-picker-wrap">
@@ -731,19 +747,49 @@
                         </div>
                     </div>
                     <button class="btn btn-primary btn-full" onclick="addCategory()">
-                        <i data-lucide="tag" size="18"></i> Create Tag
+                        <i data-lucide="tag" size="18"></i> Ustvari oznako
                     </button>
                 </div>
-                <div style="margin-top:1.5rem;font-size:0.72rem;font-weight:800;color:var(--txt-2);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.75rem">Manage Users</div>
+                <div style="margin-top:1.5rem;font-size:0.72rem;font-weight:800;color:var(--txt-2);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.75rem">Upravljanje uporabnikov</div>
                 <div id="userManage"></div>
+                
+                <button class="btn btn-secondary btn-full" style="margin-top:2rem" onclick="localStorage.removeItem('cu'); location.reload();">
+                    <i data-lucide="log-out" size="18"></i> Ponastavi profil
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== PROFILE PICKER MODAL ===== -->
+    <div class="modal-overlay center" id="profilePickerModal">
+        <div class="modal-sheet" style="border-radius:32px; max-width:400px; border-bottom:1px solid var(--glass-border);">
+            <div class="modal-header" style="justify-content:center; padding-bottom:0;">
+                <div class="modal-title">Kdo si?</div>
+            </div>
+            <div class="modal-body" style="padding:2rem;">
+                <p style="text-align:center; color:var(--txt-2); margin-bottom:2rem; font-weight:500;">Izberi svoj profil za nadaljevanje.</p>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
+                    <div class="user-pill" style="flex-direction:column; padding:1.5rem; height:auto; border-radius:24px; gap:1rem;" onclick="finishProfilePick('Viki')">
+                        <span class="avi" style="width:48px; height:48px; font-size:1.5rem;">💜</span>
+                        <span>Viki</span>
+                    </div>
+                    <div class="user-pill" style="flex-direction:column; padding:1.5rem; height:auto; border-radius:24px; gap:1rem;" onclick="finishProfilePick('Manja')">
+                        <span class="avi" style="width:48px; height:48px; font-size:1.5rem;">🌸</span>
+                        <span>Manja</span>
+                    </div>
+                </div>
+                <div class="user-pill" style="padding:1rem; width:100%; justify-content:center; border-radius:20px;" onclick="finishProfilePick('Skupaj')">
+                    <span class="avi">💌</span>
+                    <span>Skupaj</span>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
     // ===== STATE =====
-    let tasks = [], categories = [], users = ['Viki','Manja'];
-    let currentUser = localStorage.getItem('cu') || 'Viki';
+    let tasks = [], categories = [], users = ['Viki','Manja','Skupaj'];
+    let currentUser = localStorage.getItem('cu') || 'Manja';
     let selectedDate = new Date();
     let calViewDate = new Date();
     let activeView = 'home';
@@ -770,6 +816,12 @@
         applyTheme();
         buildColorPresets();
         await loadData();
+        
+        // Profile persistence / selection
+        if (!localStorage.getItem('cu')) {
+            document.getElementById('profilePickerModal').classList.add('open');
+        }
+
         buildUserStrip();
         buildUserManage();
         renderWeekStrip();
@@ -777,6 +829,17 @@
         renderHome();
         checkUpcoming();
         lucide.createIcons();
+    }
+
+    function finishProfilePick(u) {
+        currentUser = u;
+        localStorage.setItem('cu', u);
+        document.getElementById('profilePickerModal').classList.remove('open');
+        buildUserStrip();
+        renderCalendar();
+        renderHome();
+        toast('Živijo, ' + u + '! 👋');
+        haptic();
     }
 
     // ===== DATA =====
@@ -855,7 +918,7 @@
     // ===== USER STRIP =====
     function buildUserStrip() {
         const el = document.getElementById('userStrip');
-        const labels = { 'Viki': '💜', 'Manja': '🌸', 'Admin': '⚙️' };
+        const labels = { 'Viki': '💜', 'Manja': '🌸', 'Skupaj': '💌' };
         el.innerHTML = users.map(u => `
             <div class="user-pill ${u===currentUser?'active':''}" onclick="switchUser('${u}')">
                 <span class="avi">${labels[u]||'👤'}</span>
@@ -897,7 +960,7 @@
         for(let i=0; i<7; i++) {
             const d = new Date(start); d.setDate(start.getDate()+i);
             const ds = toIsoDate(d);
-            const dayTasks = tasks.filter(t => t.date===ds && t.user===currentUser);
+            const dayTasks = tasks.filter(t => t.date===ds && (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser));
             const isToday = ds === TODAY;
             const isSel = ds === toIsoDate(selectedDate);
             const div = document.createElement('div');
@@ -943,10 +1006,10 @@
         for(let i=1;i<=days;i++){
             const d = new Date(y,m,i);
             const ds = toIsoDate(d);
-            const hasTasks = tasks.some(t=>t.date===ds && t.user===currentUser);
+            const hasTasks = tasks.some(t=>t.date===ds && (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser));
             const isToday = ds===TODAY;
             const isSel = ds===toIsoDate(selectedDate);
-            const isOverdue = ds<TODAY && hasTasks && tasks.some(t=>t.date===ds&&t.user===currentUser&&!t.completed);
+            const isOverdue = ds<TODAY && hasTasks && tasks.some(t=>t.date===ds && (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser) && !t.completed);
             const div = document.createElement('div');
             div.className = 'cal-day'+(isToday?' today':'')+(isSel?' selected':'')+(hasTasks?' has-task':'')+(isOverdue?' overdue-day':'');
             div.textContent = i;
@@ -982,7 +1045,7 @@
         const isToday = ds === TODAY;
         document.getElementById('dayTitle').textContent = isToday ? 'Danes' : toDisplayDate(selectedDate);
 
-        let filtered = tasks.filter(t => t.user===currentUser && t.date===ds);
+        let filtered = tasks.filter(t => (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser) && t.date===ds);
         if(activeFilter !== 'all') filtered = filtered.filter(t => t.category === activeFilter);
 
         const done = filtered.filter(t=>t.completed).length;
@@ -999,7 +1062,7 @@
     // ===== FILTER STRIP =====
     function renderFilterStrip(ds) {
         const el = document.getElementById('filterStrip');
-        const dayCats = [...new Set(tasks.filter(t=>t.user===currentUser&&t.date===ds).map(t=>t.category))];
+        const dayCats = [...new Set(tasks.filter(t => (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser) && t.date===ds).map(t=>t.category))];
         
         let html = `<div class="filter-chip ${activeFilter==='all'?'active':''}" 
                          style="${activeFilter==='all' ? 'background:var(--p); border-color:transparent' : ''}" 
@@ -1054,6 +1117,7 @@
                     <div class="task-name${t.completed?' struck':''}">${escHtml(t.title)}</div>
                     <div class="task-meta-row">
                         <span class="task-badge" style="background:${cat.color}">${cat.name}</span>
+                        ${currentUser === 'Skupaj' ? `<span class="task-badge" style="background:var(--bg-2);color:var(--txt-2);border:1px solid var(--glass-border)">${t.user}</span>` : ''}
                         ${timeHtml}
                         ${overdueHtml}
                     </div>
@@ -1102,7 +1166,7 @@
     function checkUpcoming() {
         const soon = [];
         tasks.forEach(t => {
-            if(!t.completed && t.remindDays) {
+            if(!t.completed && t.remindDays && (currentUser==='Skupaj' ? (t.user==='Viki'||t.user==='Manja') : t.user===currentUser)) {
                 const diff = (new Date(t.date) - new Date()) / 86400000;
                 if(diff >= 0 && diff <= parseInt(t.remindDays)) soon.push(t);
             }
@@ -1187,8 +1251,18 @@
         const dateField = document.getElementById('fDate');
         document.getElementById('editId').value = id || '';
         document.getElementById('delBtn').style.display = id ? 'flex' : 'none';
-        document.getElementById('taskModalTitle').textContent = id ? 'Edit Task' : 'New Task';
+        document.getElementById('taskModalTitle').textContent = id ? 'Uredi nalogo' : 'Nova naloga';
         buildCategorySelects();
+
+        // Show user selector if in "Skupaj" mode
+        const userField = document.getElementById('fUserField');
+        if (currentUser === 'Skupaj') {
+            userField.style.display = 'block';
+            document.getElementById('fUser').value = 'Viki'; // Default to Viki in combined mode
+        } else {
+            userField.style.display = 'none';
+        }
+
         if(id) {
             const t = tasks.find(x=>x.id===id);
             if(!t) return;
@@ -1198,6 +1272,7 @@
             document.getElementById('fCategory').value = t.category || '';
             document.getElementById('fRemind').value = t.remindDays || 2;
             document.getElementById('fNote').value = t.note || '';
+            document.getElementById('fUser').value = t.user || 'Viki';
             dateField.removeAttribute('readonly');
         } else {
             document.getElementById('fTitle').value = '';
@@ -1259,13 +1334,14 @@
             time: document.getElementById('fTime').value,
             category: document.getElementById('fCategory').value,
             remindDays: parseInt(document.getElementById('fRemind').value)||2,
-            note: document.getElementById('fNote').value.trim()
+            note: document.getElementById('fNote').value.trim(),
+            user: (currentUser === 'Skupaj') ? document.getElementById('fUser').value : currentUser
         };
         if(editId) {
             const idx = tasks.findIndex(x=>x.id===editId);
             if(idx>-1) tasks[idx] = {...tasks[idx], ...data};
         } else {
-            tasks.push({id: Date.now().toString(), user: currentUser, completed: false, ...data});
+            tasks.push({id: Date.now().toString(), completed: false, ...data});
         }
         saveData().then(() => { closeTaskModal(); renderCalendar(); renderWeekStrip(); renderHome(); });
         haptic();
