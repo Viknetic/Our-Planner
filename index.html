@@ -336,6 +336,13 @@
         .form-textarea { min-height: 88px; resize: none; line-height: 1.5; }
         .form-select { appearance: none; cursor: pointer; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        .form-field-picker { position: relative; }
+        .picker-display {
+            position: absolute; left: 1rem; top: 50%; transform: translateY(-50%);
+            pointer-events: none; font-size: 0.95rem; color: var(--txt-1); z-index: 1;
+        }
+        .form-input-picker { color: transparent !important; cursor: pointer; position: relative; z-index: 2; }
+        .form-input-picker::-webkit-calendar-picker-indicator { position: absolute; right: 10px; opacity: 0.5; filter: invert(var(--darkModeInv)); z-index: 3; }
 
         /* ===== BUTTONS ===== */
         .btn { padding: 0.9rem 1.5rem; border-radius: 16px; font-family: var(--font); font-size: 0.95rem; font-weight: 700; cursor: pointer; border: none; transition: all 0.25s var(--ease); display: flex; align-items: center; gap: 0.5rem; justify-content: center; }
@@ -530,11 +537,17 @@
                 <div class="form-row">
                     <div class="form-field">
                         <label class="form-label">Date</label>
-                        <input type="date" class="form-input" id="fDate">
+                        <div class="form-field-picker">
+                            <div class="picker-display" id="fDateDisplay"></div>
+                            <input type="date" class="form-input form-input-picker" id="fDate" oninput="updatePickers()">
+                        </div>
                     </div>
                     <div class="form-field">
                         <label class="form-label">Time (opt.)</label>
-                        <input type="time" class="form-input" id="fTime">
+                        <div class="form-field-picker">
+                            <div class="picker-display" id="fTimeDisplay"></div>
+                            <input type="time" class="form-input form-input-picker" id="fTime" oninput="updatePickers()">
+                        </div>
                     </div>
                 </div>
                 <div class="form-row">
@@ -673,6 +686,7 @@
         document.body.style.setProperty('--txt-1', darkMode ? '#f0f0ff' : '#0d0d1a');
         document.body.style.setProperty('--txt-2', darkMode ? '#8888aa' : '#6060a0');
         document.body.style.setProperty('--txt-3', darkMode ? '#4a4a6a' : '#b8b8d0');
+        document.body.style.setProperty('--darkModeInv', darkMode ? '1' : '0');
         document.querySelector('.ambient.amb-1').style.opacity = darkMode ? '0.35' : '0.12';
         document.querySelector('.ambient.amb-2').style.opacity = darkMode ? '0.35' : '0.1';
     }
@@ -1044,8 +1058,29 @@
             }
         }
         modal.classList.add('open');
+        updatePickers();
         setTimeout(() => document.getElementById('fTitle').focus(), 300);
         lucide.createIcons();
+    }
+
+    function updatePickers() {
+        const dVal = document.getElementById('fDate').value;
+        const tVal = document.getElementById('fTime').value;
+        const dDisp = document.getElementById('fDateDisplay');
+        const tDisp = document.getElementById('fTimeDisplay');
+        
+        if (dVal) {
+            const parts = dVal.split('-');
+            dDisp.textContent = `${parts[2]}/${parts[1]}/${parts[0]}`;
+        } else {
+            dDisp.textContent = 'DD/MM/YYYY';
+        }
+        
+        if (tVal) {
+            tDisp.textContent = tVal; // input value is always HH:mm
+        } else {
+            tDisp.textContent = '--:--';
+        }
     }
 
     function closeTaskModal() { document.getElementById('taskModal').classList.remove('open'); }
