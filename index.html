@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sl-SI">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -825,7 +825,7 @@
 
         const done = filtered.filter(t=>t.completed).length;
         const pct = filtered.length ? Math.round(done/filtered.length*100) : 0;
-        document.getElementById('taskMeta').textContent = `${filtered.length} task${filtered.length!==1?'s':''} · ${done} done`;
+        document.getElementById('taskMeta').textContent = `${filtered.length} nalog${filtered.length!==1?'':'o'} · ${done} opravljenih`;
         document.getElementById('progressBar').style.width = pct+'%';
 
         renderFilterStrip(ds);
@@ -911,7 +911,7 @@
             el.appendChild(sec);
             renderTaskList(uTasks, 'allList-'+u);
         });
-        document.getElementById('allMeta').textContent = toDisplayDate(selectedDate) + ` · ${totalCount} tasks`;
+        document.getElementById('allMeta').textContent = toDisplayDate(selectedDate) + ` · ${totalCount} nalog`;
         lucide.createIcons();
     }
 
@@ -936,7 +936,7 @@
         const banner = document.getElementById('upcomingBanner');
         if(soon.length) {
             banner.style.display = 'flex';
-            document.getElementById('upcomingCount').textContent = `${soon.length} task${soon.length!==1?'s':''} coming up`;
+            document.getElementById('upcomingCount').textContent = `${soon.length} nalog${soon.length!==1?'':'a'} prihajajo`;
         } else {
             banner.style.display = 'none';
         }
