@@ -558,9 +558,6 @@
                     <button class="ibtn" id="lightModeBtn" onclick="toggleTheme()" title="Toggle theme">
                         <i data-lucide="sun" size="20"></i>
                     </button>
-                    <button class="ibtn" onclick="openSettings()" title="Settings">
-                        <i data-lucide="settings-2" size="20"></i>
-                    </button>
                 </div>
             </div>
         </div>
@@ -639,23 +636,26 @@
 
         </main>
 
-        <!-- Bottom Nav -->
         <nav class="bottom-nav">
             <div class="nav-inner">
                 <div class="nav-item active" id="nav-home" onclick="nav('home')">
-                    <i data-lucide="calendar-days" size="24"></i>
-                    <span class="nav-label">Home</span>
+                    <i data-lucide="calendar-days" size="22"></i>
+                    <span class="nav-label">Domov</span>
                 </div>
                 <div class="nav-item" id="nav-all" onclick="nav('all')">
-                    <i data-lucide="users" size="24"></i>
-                    <span class="nav-label">All</span>
+                    <i data-lucide="users" size="22"></i>
+                    <span class="nav-label">Vsi</span>
                 </div>
                 <button class="nav-add-btn" onclick="openTaskModal(null, false)">
                     <i data-lucide="plus" size="28"></i>
                 </button>
                 <div class="nav-item" id="nav-search" onclick="nav('search')">
-                    <i data-lucide="search" size="24"></i>
-                    <span class="nav-label">Search</span>
+                    <i data-lucide="search" size="22"></i>
+                    <span class="nav-label">Išči</span>
+                </div>
+                <div class="nav-item" id="nav-settings" onclick="openSettings()">
+                    <i data-lucide="settings-2" size="22"></i>
+                    <span class="nav-label">Nast.</span>
                 </div>
             </div>
         </nav>
