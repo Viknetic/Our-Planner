@@ -607,6 +607,7 @@
     let lastTap = 0, lastDateStr = '';
 
     function toIsoDate(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+    function toDisplayDate(d) { return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear(); }
 
     const TODAY = toIsoDate(new Date());
     const COLOR_PRESETS = ['#7c6ef0','#ec4899','#22d3a8','#f59e0b','#f87171','#38bdf8','#a78bfa','#fb923c'];
@@ -725,9 +726,11 @@
     // ===== WEEK STRIP =====
     function renderWeekStrip() {
         const el = document.getElementById('weekStrip');
-        const dayNames = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+        const dayNames = ['Ne','Po','To','Sr','Če','Pe','So'];
         const start = new Date(selectedDate);
-        start.setDate(start.getDate() - start.getDay());
+        let dayIdx = start.getDay();
+        dayIdx = (dayIdx === 0) ? 6 : dayIdx - 1;
+        start.setDate(start.getDate() - dayIdx);
         el.innerHTML = '';
         for(let i=0; i<7; i++) {
             const d = new Date(start); d.setDate(start.getDate()+i);
@@ -761,10 +764,12 @@
     function renderCalendar() {
         const grid = document.getElementById('calGrid');
         const y = calViewDate.getFullYear(), m = calViewDate.getMonth();
-        document.getElementById('calMonthTitle').textContent = new Intl.DateTimeFormat('en-US',{month:'long',year:'numeric'}).format(calViewDate);
-        const dayNames = ['S','M','T','W','T','F','S'];
+        const monthStr = new Intl.DateTimeFormat('sl-SI',{month:'long',year:'numeric'}).format(calViewDate);
+        document.getElementById('calMonthTitle').textContent = monthStr.charAt(0).toUpperCase() + monthStr.slice(1);
+        const dayNames = ['P','T','S','Č','P','S','N'];
         grid.innerHTML = dayNames.map(d=>`<div class="cal-dname">${d}</div>`).join('');
-        const first = new Date(y,m,1).getDay();
+        let first = new Date(y,m,1).getDay();
+        first = (first === 0) ? 6 : first - 1;
         const days = new Date(y,m+1,0).getDate();
         const prevDays = new Date(y,m,0).getDate();
         for(let i=0;i<first;i++){
@@ -813,8 +818,7 @@
     function renderHome() {
         const ds = toIsoDate(selectedDate);
         const isToday = ds === TODAY;
-        const opts = {weekday:'long',month:'long',day:'numeric'};
-        document.getElementById('dayTitle').textContent = isToday ? 'Today' : selectedDate.toLocaleDateString('en-US',{month:'long',day:'numeric'});
+        document.getElementById('dayTitle').textContent = isToday ? 'Danes' : toDisplayDate(selectedDate);
 
         let filtered = tasks.filter(t => t.user===currentUser && t.date===ds);
         if(activeFilter !== 'all') filtered = filtered.filter(t => t.category === activeFilter);
@@ -907,7 +911,7 @@
             el.appendChild(sec);
             renderTaskList(uTasks, 'allList-'+u);
         });
-        document.getElementById('allMeta').textContent = selectedDate.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}) + ` · ${totalCount} tasks`;
+        document.getElementById('allMeta').textContent = toDisplayDate(selectedDate) + ` · ${totalCount} tasks`;
         lucide.createIcons();
     }
 
