@@ -127,17 +127,9 @@
             border-radius: 50%; filter: blur(120px); opacity: var(--amb-op);
             transition: all 1.5s var(--ease);
             will-change: transform, opacity;
-            animation: ambientRotate 25s infinite ease-in-out alternate;
         }
-        .amb-1 { width: 45vw; height: 45vw; background: var(--p); top: -10%; right: -5%; animation-delay: -2s; }
-        .amb-2 { width: 40vw; height: 40vw; background: var(--acc); bottom: 10%; left: -10%; animation-delay: -5s; }
-
-        @keyframes ambientRotate {
-            0% { transform: translate(0, 0) scale(1) rotate(0deg); }
-            33% { transform: translate(5vw, 5vh) scale(1.1) rotate(10deg); }
-            66% { transform: translate(-5vw, 10vh) scale(0.9) rotate(-10deg); }
-            100% { transform: translate(2vw, -5vh) scale(1.05) rotate(5deg); }
-        }
+        .amb-1 { width: 45vw; height: 45vw; background: var(--p); top: -10%; right: -5%; }
+        .amb-2 { width: 40vw; height: 40vw; background: var(--acc); bottom: 10%; left: -10%; }
 
         /* ===== LAYOUT ===== */
         .app-shell { 
@@ -260,19 +252,19 @@
         /* ===== CALENDAR CARD ===== */
         .cal-card {
             background: var(--bg-card); border: 1px solid var(--glass-border);
-            border-radius: var(--radius-2xl); padding: 1.5rem; margin-bottom: 1.5rem;
+            border-radius: var(--radius-2xl); padding: 1.75rem; margin-bottom: 1.5rem;
             box-shadow: var(--shadow-md);
         }
-        .cal-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-        .cal-month-title { font-size: 1.25rem; font-weight: 900; letter-spacing: -0.04em; color: var(--txt-1); }
+        .cal-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.75rem; }
+        .cal-month-title { font-size: 1.4rem; font-weight: 900; letter-spacing: -0.04em; color: var(--txt-1); }
         .cal-nav-btns { display: flex; gap: 0.75rem; }
 
-        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem; }
-        .cal-dname { font-size: 0.65rem; font-weight: 900; color: var(--txt-3); text-align: center; padding-bottom: 8px; text-transform: uppercase; letter-spacing: 0.1em; }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.6rem; }
+        .cal-dname { font-size: 0.7rem; font-weight: 900; color: var(--txt-3); text-align: center; padding-bottom: 10px; text-transform: uppercase; letter-spacing: 0.1em; }
         .cal-day {
             aspect-ratio: 1; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; border-radius: 12px;
-            font-size: 0.95rem; font-weight: 600; cursor: pointer; gap: 4px;
+            align-items: center; justify-content: center; border-radius: 14px;
+            font-size: 1.05rem; font-weight: 600; cursor: pointer; gap: 4px;
             transition: all 0.3s var(--ease); position: relative; 
             border: 1px solid transparent;
         }
@@ -1193,21 +1185,32 @@
             el.appendChild(card);
         });
 
-        // Initialize Sortable
-        if (containerId === 'taskList') {
-            new Sortable(el, {
-                animation: 150,
-                ghostClass: 'sortable-ghost',
-                onEnd: function (evt) {
-                    const newOrder = Array.from(el.children).map(row => row.dataset.id);
-                    const ds = toIsoDate(selectedDate);
-                    // Update global tasks order for this day
-                    const otherTasks = tasks.filter(t => t.date !== ds || (currentUser !== 'Skupaj' && t.user !== currentUser));
-                    const currentDayTasks = newOrder.map(id => tasks.find(t => t.id === id));
-                    tasks = [...otherTasks, ...currentDayTasks];
-                    saveData(false);
-                }
-            });
+        // Initialize Sortable safely
+        if (containerId === 'taskList' && activeFilter === 'all') {
+            try {
+                new Sortable(el, {
+                    animation: 150,
+                    ghostClass: 'sortable-ghost',
+                    onEnd: function (evt) {
+                        const newOrder = Array.from(el.children).map(row => row.dataset.id).filter(id => id);
+                        if (!newOrder.length) return;
+                        
+                        const ds = toIsoDate(selectedDate);
+                        // Identify tasks NOT in the current view/reorder set
+                        const otherTasks = tasks.filter(t => {
+                            const isSameDay = t.date === ds;
+                            const isSameUser = (currentUser === 'Skupaj') ? (t.user === 'Viki' || t.user === 'Manja') : (t.user === currentUser);
+                            return !(isSameDay && isSameUser);
+                        });
+                        
+                        const currentDayTasks = newOrder.map(id => tasks.find(t => t.id === id)).filter(t => t);
+                        tasks = [...otherTasks, ...currentDayTasks];
+                        saveData(false);
+                    }
+                });
+            } catch (e) {
+                console.warn('Sortable init failed', e);
+            }
         }
         lucide.createIcons();
     }
